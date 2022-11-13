@@ -22,7 +22,7 @@ def Bertalanffy(t, v, b, d):
 
 # Analytical solution of Mendelsohn ODE (theta = V_0, a, b)
 def mend_sol(theta, t):
-    return ((1 - theta[2])(theta[1]*t + (theta[0]**(1-theta[2]))/(1-theta[2])))**(1/(1-theta[2]))
+    return ((1 - theta[2])*(theta[1]*t + (theta[0]**(1-theta[2]))/(1-theta[2])))**(1/(1-theta[2]))
 
 # Analytical solution of Exponential ODE (theta = V_0, a)
 def exp_sol(theta, t):
