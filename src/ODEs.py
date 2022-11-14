@@ -3,6 +3,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.integrate import solve_ivp
 from scipy.optimize import least_squares
+from scipy import optimize as op
+import numdifftools as nd
+from ci_rvm import find_CI
+
 
 def Mendelsohn(t, v, a, b):
     return a*(v**b)
@@ -156,6 +160,7 @@ bert_growth_consts = least_squares(bert_growth_res, theta0)
 theta0 = [0.01, 1, 2]
 bert_decay_consts = least_squares(bert_decay_res, theta0)
 
+'''
 print(exp_consts.x)
 print(mend_consts.x)
 print(log_consts.x)
@@ -163,4 +168,32 @@ print(gomp_consts.x)
 print(bert_consts.x)
 print(bert_growth_consts.x)
 print(bert_decay_consts.x)
+'''
 
+#
+#
+#
+
+# Profile Likelihood
+
+n = 101
+
+def logL_exp(params):
+    V0, a = params
+    print(n*np.log(V0) + a*sum(np.linspace(0,1,n))) 
+    return n*np.log(V0) + a*sum(np.linspace(0,1,n))
+
+logL_exp([0.01,1])
+
+neglogL_exp = lambda params: -logL_exp(params)
+
+x0 = [0, 0]
+
+result = op.minimize(neglogL_exp, x0)
+
+jac = nd.Gradient(logL_exp)
+hess = nd.Hessian(logL_exp)
+
+CIs = find_CI(result.x, logL_exp, jac, hess, disp=True)
+
+print(CIs)
