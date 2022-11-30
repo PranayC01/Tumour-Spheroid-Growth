@@ -3,6 +3,7 @@ import numpy as np
 from scipy.integrate import solve_ivp
 from scipy.optimize import least_squares
 from scipy.optimize import minimize
+from scipy.optimize import root_scalar
 from scipy.stats import chi2
 import timeit
 
@@ -112,71 +113,87 @@ def plot_with_noise(sol, noise):
     plt.show()
 
 #------------------------------------------------------------------------------------------------------------------------------------------#
-
 t_eval = np.linspace(0, 10, 101)
-noise = 0.05
-
-exp_sol_noise = exp_sol([0.01, 1], t_eval) * (1 + noise * np.random.normal(0,1,101))
-mend_sol_noise = mend_sol([0.01, 1, 2], t_eval) * (1 + noise * np.random.normal(0,1,101))
-log_sol_noise = log_sol([0.01, 1, 10], t_eval) * (1 + noise * np.random.normal(0,1,101))
-gomp_sol_noise = gomp_sol([0.01, 1, 10], t_eval) * (1 + noise * np.random.normal(0,1,101))
-bert_sol_noise = bert_sol([0.01, 1, 1], t_eval) * (1 + noise * np.random.normal(0,1,101))
-bert_growth_sol_noise = bert_sol([0.01, 2, 1], t_eval) * (1 + noise * np.random.normal(0,1,101))
-bert_decay_sol_noise = bert_sol([0.01, 1, 2], t_eval) * (1 + noise * np.random.normal(0,1,101))
-
-#------------------------------------------------------------------------------------------------------------------------------------------#
-
-
-def exp_res(theta):
-    return exp_sol(theta, t_eval) - exp_sol_noise
-
-def mend_res(theta):
-    return mend_sol(theta, t_eval) - mend_sol_noise
-
-def log_res(theta):
-    return log_sol(theta, t_eval) - log_sol_noise
-
-def gomp_res(theta):
-    return gomp_sol(theta, t_eval) - gomp_sol_noise
-
-def bert_res(theta):
-    return bert_sol(theta, t_eval) - bert_sol_noise
-
-def bert_growth_res(theta):
-    return bert_sol(theta, t_eval) - bert_growth_sol_noise
-    
-def bert_decay_res(theta):
-    return bert_sol(theta, t_eval) - bert_decay_sol_noise
+def exp_sol_noise(noise):
+    return exp_sol([0.01, 1], t_eval) * (1 + noise * np.random.normal(0,1,101))
+def mend_sol_noise(noise):
+    return mend_sol([0.01, 1, 2], t_eval) * (1 + noise * np.random.normal(0,1,101))
+def log_sol_noise(noise):
+    return log_sol([0.01, 1, 10], t_eval) * (1 + noise * np.random.normal(0,1,101))
+def gomp_sol_noise(noise):
+    return gomp_sol([0.01, 1, 10], t_eval) * (1 + noise * np.random.normal(0,1,101))
+def bert_sol_noise(noise):
+    return bert_sol([0.01, 1, 1], t_eval) * (1 + noise * np.random.normal(0,1,101))
+def bert_growth_sol_noise(noise):
+    return bert_sol([0.01, 2, 1], t_eval) * (1 + noise * np.random.normal(0,1,101))
+def bert_decay_sol_noise(noise):
+    return bert_sol([0.01, 1, 2], t_eval) * (1 + noise * np.random.normal(0,1,101))
 
 #------------------------------------------------------------------------------------------------------------------------------------------#
-    
 
-theta0 = [0.01, 1]
-exp_consts = least_squares(exp_res, theta0)
-theta0 = [0.01, 1, 2]
-mend_consts = least_squares(mend_res, theta0)
-theta0 = [0.01, 1, 10]
-log_consts = least_squares(log_res, theta0)
-theta0 = [0.01, 1, 10]
-gomp_consts = least_squares(gomp_res, theta0)
-theta0 = [0.01, 1, 1]
-bert_consts = least_squares(bert_res, theta0)
-theta0 = [0.01, 2, 1]
-bert_growth_consts = least_squares(bert_growth_res, theta0)
-theta0 = [0.01, 1, 2]
-bert_decay_consts = least_squares(bert_decay_res, theta0)
+
+def exp_res(theta, noise):
+    return exp_sol(theta, t_eval) - exp_sol_noise(noise)
+
+def mend_res(theta, noise):
+    return mend_sol(theta, t_eval) - mend_sol_noise(noise)
+
+def log_res(theta, noise):
+    return log_sol(theta, t_eval) - log_sol_noise(noise)
+
+def gomp_res(theta, noise):
+    return gomp_sol(theta, t_eval) - gomp_sol_noise(noise)
+
+def bert_res(theta, noise):
+    return bert_sol(theta, t_eval) - bert_sol_noise(noise)
+
+def bert_growth_res(theta, noise):
+    return bert_sol(theta, t_eval) - bert_growth_sol_noise(noise)
+    
+def bert_decay_res(theta, noise):
+    return bert_sol(theta, t_eval) - bert_decay_sol_noise(noise)
+
+#------------------------------------------------------------------------------------------------------------------------------------------#
+    
+def exp_consts(noise):
+    theta0 = [0.01, 1]
+    return least_squares(exp_res, theta0, noise)
+
+def mend_consts(noise):
+    theta0 = [0.01, 1, 2]
+    return least_squares(mend_res, theta0, args = (0.05))
+
+def log_consts(noise):
+    theta0 = [0.01, 1, 10]
+    return least_squares(log_res, theta0, args = (0.05))
+
+def gomp_consts(noise):
+    theta0 = [0.01, 1, 10]
+    return least_squares(gomp_res, theta0, args = (0.05))
+
+def bert_consts(noise):
+    theta0 = [0.01, 1, 1]
+    return least_squares(bert_res, theta0, args = (0.05))
+
+def bert_growth_consts(noise):
+    theta0 = [0.01, 2, 1]
+    return least_squares(bert_growth_res, theta0, args = (0.05))
+
+def bert_decay_consts(noise):
+    theta0 = [0.01, 1, 2]
+    return least_squares(bert_decay_res, theta0, args = (0.05))
 
 #------------------------------------------------------------------------------------------------------------------------------------------#
 # Least Squares
 '''
 print("Least Squares estimates:")
-print("Exponential Model: ", "[V0, a] = ", exp_consts.x)
-print("Mendelsohn Model: ", "[V0, a, b] = ", mend_consts.x)
-print("Logistic Model: ", "[V0, r, K] = ", log_consts.x)
-print("Gompertz Model: ", "[V0, r, K] = ", gomp_consts.x)
-print("Bertalanffy Model: ", "[V0, b, d] = ", bert_consts.x)
-print("Bertalanffy Growth Model: ", "[V0, b, d] = ", bert_growth_consts.x)
-print("Bertalanffy Decay Model: ", "[V0, b, d] = ", bert_decay_consts.x)
+print("Exponential Model: ", "[V0, a] = ", exp_consts(0.05).x)
+print("Mendelsohn Model: ", "[V0, a, b] = ", mend_consts(0.05).x)
+print("Logistic Model: ", "[V0, r, K] = ", log_consts(0.05).x)
+print("Gompertz Model: ", "[V0, r, K] = ", gomp_consts(0.05).x)
+print("Bertalanffy Model: ", "[V0, b, d] = ", bert_consts(0.05).x)
+print("Bertalanffy Growth Model: ", "[V0, b, d] = ", bert_growth_consts(0.05).x)
+print("Bertalanffy Decay Model: ", "[V0, b, d] = ", bert_decay_consts(0.05).x)
 '''
 
 
@@ -204,16 +221,16 @@ log_l([0.01, 1, 10], gomp_num_sol, gomp_sol_noise, 0.05)
 log_l([0.01, 1, 1], bert_num_sol, bert_sol_noise, 0.05)
 '''
 def exp_mle(noise): 
-    return minimize(neg_log_l, [0.01, 1], method = 'Nelder-Mead', args=(exp_num_sol, exp_sol_noise, noise))
+    return minimize(neg_log_l, [0.01, 1], method = 'Nelder-Mead', args=(exp_num_sol, exp_sol_noise(noise), noise))
 def mend_mle(noise): 
-    return minimize(neg_log_l, [0.01, 1, 2], method = 'Nelder-Mead', args=(mend_num_sol, mend_sol_noise, noise))
+    return minimize(neg_log_l, [0.01, 1, 2], method = 'Nelder-Mead', args=(mend_num_sol, mend_sol_noise(noise), noise))
 #Note: No. of max iterations exceeded without convergence. Can use options={'maxiter':1000}
 def log_mle(noise): 
-    return minimize(neg_log_l, [0.01, 1, 10], method = 'Nelder-Mead', args=(log_num_sol, log_sol_noise, noise))
+    return minimize(neg_log_l, [0.01, 1, 10], method = 'Nelder-Mead', args=(log_num_sol, log_sol_noise(noise), noise))
 def gomp_mle(noise):
-    return minimize(neg_log_l, [0.01, 1, 10], method = 'Nelder-Mead', args=(gomp_num_sol, gomp_sol_noise, noise))
+    return minimize(neg_log_l, [0.01, 1, 10], method = 'Nelder-Mead', args=(gomp_num_sol, gomp_sol_noise(noise), noise))
 def bert_mle(noise):
-    return minimize(neg_log_l, [0.01, 1, 1], method = 'Nelder-Mead', args=(bert_num_sol, bert_sol_noise, noise))
+    return minimize(neg_log_l, [0.01, 1, 1], method = 'Nelder-Mead', args=(bert_num_sol, bert_sol_noise(noise), noise))
 '''
 print("Maximum likelihood estimates:")
 print("Exponential Model: ", "[V0, a] = ", exp_mle(noise).x)
@@ -229,135 +246,155 @@ print(log_l(exp_mle(noise).x, exp_num_sol, exp_sol_noise, noise) + exp_mle(noise
 
 # Profile Likelihood confidence intervals
 
-def exp_CI(confidence, noise):
-    a = np.linspace(0.99,1.01,101)
+def exp_CI(confidence, noise, param):
     df = 1
-    a_vals = []
-    for i in a:
-        diff = -exp_mle(noise).fun - log_l([exp_mle(noise).x[0], i], exp_num_sol, exp_sol_noise, noise)
-        if  diff < chi2.ppf(confidence, df)/2:
-            a_vals.append(i)
-    CI = [min(a_vals), max(a_vals)]
-    return CI
+    if param == "a":
+        def test(a):
+            return -exp_mle(noise).fun - log_l([exp_mle(noise).x[0], a], exp_num_sol, exp_sol_noise(noise), noise) - chi2.ppf(confidence, df)/2
+        root1 = root_scalar(test, x0 = 0.5*exp_mle(noise).x[1], x1 = 0.9*exp_mle(noise).x[1])
+        root2 = root_scalar(test, x0 = 1.5*exp_mle(noise).x[1], x1 = 1.1*exp_mle(noise).x[1])
+        CI = [min(root1.root, root2.root), max(root1.root, root2.root)]
+        return CI
+    elif param == "V0":
+        def test(V0):
+            return -exp_mle(noise).fun - log_l([V0, exp_mle(noise).x[1]], exp_num_sol, exp_sol_noise(noise), noise) - chi2.ppf(confidence, df)/2
+        root1 = root_scalar(test, x0 = 0.5*exp_mle(noise).x[0], x1 = 0.9*exp_mle(noise).x[0])
+        root2 = root_scalar(test, x0 = 1.5*exp_mle(noise).x[0], x1 = 1.1*exp_mle(noise).x[0])
+        CI = [min(root1.root, root2.root), max(root1.root, root2.root)]
+        return CI
 
 def log_CI(confidence, noise, param):
-    r = np.linspace(0.95, 1.05, 101)
-    K = np.linspace(9.5, 10.5, 101)
     df = 1
-    r_vals = []
-    K_vals = []
     if param == "r":
-        for i in r:
-            diff = -log_mle(noise).fun - log_l([log_mle(noise).x[0], i, log_mle(noise).x[2]], log_num_sol, log_sol_noise, noise)
-            if diff < chi2.ppf(confidence, df)/2:
-                r_vals.append(i)
-        r_CI = [min(r_vals), max(r_vals)]
-        return r_CI
+        def test(r):
+            return -log_mle(noise).fun - log_l([log_mle(noise).x[0], r, log_mle(noise).x[2]], log_num_sol, log_sol_noise(noise), noise) - chi2.ppf(confidence, df)/2
+        root1 = root_scalar(test, x0 = 0.5*log_mle(noise).x[1], x1 = 0.9*log_mle(noise).x[1])
+        root2 = root_scalar(test, x0 = 1.5*log_mle(noise).x[1], x1 = 1.1*log_mle(noise).x[1])
+        CI = [min(root1.root, root2.root), max(root1.root, root2.root)]
+        return CI
     elif param == "K":
-        for i in K:
-            diff = -log_mle(noise).fun - log_l([log_mle(noise).x[0], log_mle(noise).x[1], i], log_num_sol, log_sol_noise, noise)
-            if diff < chi2.ppf(confidence, df)/2:
-                K_vals.append(i)
-        K_CI = [min(K_vals), max(K_vals)]
-        return K_CI
+        def test(K):
+            return -log_mle(noise).fun - log_l([log_mle(noise).x[0], log_mle(noise).x[1], K], log_num_sol, log_sol_noise(noise), noise) - chi2.ppf(confidence, df)/2
+        root1 = root_scalar(test, x0 = 0.5*log_mle(noise).x[2], x1 = 0.9*log_mle(noise).x[2])
+        root2 = root_scalar(test, x0 = 1.5*log_mle(noise).x[2], x1 = 1.1*log_mle(noise).x[2])
+        CI = [min(root1.root, root2.root), max(root1.root, root2.root)]
+        return CI
+    elif param == "V0":
+        def test(V0):
+            return -log_mle(noise).fun - log_l([V0, log_mle(noise).x[1], log_mle(noise).x[2]], log_num_sol, log_sol_noise(noise), noise) - chi2.ppf(confidence, df)/2
+        root1 = root_scalar(test, x0 = 0.5*log_mle(noise).x[0], x1 = 0.9*log_mle(noise).x[0])
+        root2 = root_scalar(test, x0 = 1.5*log_mle(noise).x[0], x1 = 1.1*log_mle(noise).x[0])
+        CI = [min(root1.root, root2.root), max(root1.root, root2.root)]
+        return CI
     else:
         print("Check param value")
 
 def gomp_CI(confidence, noise, param):
-    r = np.linspace(0.95, 1.05, 101)
-    K = np.linspace(9.5, 10.5, 101)
     df = 1
-    r_vals = []
-    K_vals = []
     if param == "r":
-        for i in r:
-            diff = -gomp_mle(noise).fun - log_l([gomp_mle(noise).x[0], i, gomp_mle(noise).x[2]], gomp_num_sol, gomp_sol_noise, noise)
-            if diff < chi2.ppf(confidence, df)/2:
-                r_vals.append(i)
-        r_CI = [min(r_vals), max(r_vals)]
-        return r_CI
+        def test(r):
+            return -gomp_mle(noise).fun - log_l([gomp_mle(noise).x[0], r, gomp_mle(noise).x[2]], gomp_num_sol, gomp_sol_noise(noise), noise) - chi2.ppf(confidence, df)/2
+        root1 = root_scalar(test, x0 = 0.5*gomp_mle(noise).x[1], x1 = 0.9*gomp_mle(noise).x[1])
+        root2 = root_scalar(test, x0 = 1.5*gomp_mle(noise).x[1], x1 = 1.1*gomp_mle(noise).x[1])
+        CI = [min(root1.root, root2.root), max(root1.root, root2.root)]
+        return CI
     elif param == "K":
-        for i in K:
-            diff = -gomp_mle(noise).fun - log_l([gomp_mle(noise).x[0], gomp_mle(noise).x[1], i], gomp_num_sol, gomp_sol_noise, noise)
-            if diff < chi2.ppf(confidence, df)/2:
-                K_vals.append(i)
-        K_CI = [min(K_vals), max(K_vals)]
-        return K_CI
+        def test(K):
+            return -gomp_mle(noise).fun - log_l([gomp_mle(noise).x[0], gomp_mle(noise).x[1], K], gomp_num_sol, gomp_sol_noise(noise), noise) - chi2.ppf(confidence, df)/2
+        root1 = root_scalar(test, x0 = 0.5*gomp_mle(noise).x[2], x1 = 0.9*gomp_mle(noise).x[2])
+        root2 = root_scalar(test, x0 = 1.5*gomp_mle(noise).x[2], x1 = 1.1*gomp_mle(noise).x[2])
+        CI = [min(root1.root, root2.root), max(root1.root, root2.root)]
+        return CI
+    elif param == "V0":
+        def test(V0):
+            return -gomp_mle(noise).fun - log_l([V0, gomp_mle(noise).x[1], gomp_mle(noise).x[2]], gomp_num_sol, gomp_sol_noise(noise), noise) - chi2.ppf(confidence, df)/2
+        root1 = root_scalar(test, x0 = 0.5*gomp_mle(noise).x[0], x1 = 0.9*gomp_mle(noise).x[0])
+        root2 = root_scalar(test, x0 = 1.5*gomp_mle(noise).x[0], x1 = 1.1*gomp_mle(noise).x[0])
+        CI = [min(root1.root, root2.root), max(root1.root, root2.root)]
+        return CI
     else:
         print("Check param value")
 
 def bert_CI(confidence, noise, param):
-    b = np.linspace(0.95, 1.05, 101)
-    d = np.linspace(0.95, 1.05, 101)
     df = 1
-    b_vals = []
-    d_vals = []
     if param == "b":
-        for i in b:
-            diff = -bert_mle(noise).fun - log_l([bert_mle(noise).x[0], i, bert_mle(noise).x[2]], bert_num_sol, bert_sol_noise, noise)
-            if diff < chi2.ppf(confidence, df)/2:
-                b_vals.append(i)
-        b_CI = [min(b_vals), max(b_vals)]
-        return b_CI
+        def test(b):
+            return -bert_mle(noise).fun - log_l([bert_mle(noise).x[0], b, bert_mle(noise).x[2]], bert_num_sol, bert_sol_noise(noise), noise) - chi2.ppf(confidence, df)/2
+        root1 = root_scalar(test, x0 = 0.5*bert_mle(noise).x[1], x1 = 0.9*bert_mle(noise).x[1])
+        root2 = root_scalar(test, x0 = 1.5*bert_mle(noise).x[1], x1 = 1.1*bert_mle(noise).x[1])
+        CI = [min(root1.root, root2.root), max(root1.root, root2.root)]
+        return CI
     elif param == "d":
-        for i in d:
-            diff = -bert_mle(noise).fun - log_l([bert_mle(noise).x[0], bert_mle(noise).x[1], i], bert_num_sol, bert_sol_noise, noise)
-            if diff < chi2.ppf(confidence, df)/2:
-                d_vals.append(i)
-        d_CI = [min(d_vals), max(d_vals)]
-        return d_CI
+        def test(d):
+            return -bert_mle(noise).fun - log_l([bert_mle(noise).x[0], bert_mle(noise).x[1], d], bert_num_sol, bert_sol_noise(noise), noise) - chi2.ppf(confidence, df)/2
+        root1 = root_scalar(test, x0 = 0.5*bert_mle(noise).x[2], x1 = 0.9*bert_mle(noise).x[2])
+        root2 = root_scalar(test, x0 = 1.5*bert_mle(noise).x[2], x1 = 1.1*bert_mle(noise).x[2])
+        CI = [min(root1.root, root2.root), max(root1.root, root2.root)]
+        return CI
+    elif param == "V0":
+        def test(V0):
+            return -bert_mle(noise).fun - log_l([V0, bert_mle(noise).x[1], bert_mle(noise).x[2]], bert_num_sol, bert_sol_noise(noise), noise) - chi2.ppf(confidence, df)/2
+        root1 = root_scalar(test, x0 = 0.5*bert_mle(noise).x[0], x1 = 0.9*bert_mle(noise).x[0])
+        root2 = root_scalar(test, x0 = 1.5*bert_mle(noise).x[0], x1 = 1.1*bert_mle(noise).x[0])
+        CI = [min(root1.root, root2.root), max(root1.root, root2.root)]
+        return CI
     else:
         print("Check param value")
 
 def mend_CI(confidence, noise, param):
-    a = np.linspace(0.9, 1.1, 101)
-    b = np.linspace(1.9, 2.1, 101)
     df = 1
-    a_vals = []
-    b_vals = []
     if param == "a":
-        for i in a:
-            diff = -mend_mle(noise).fun - log_l([mend_mle(noise).x[0], i, mend_mle(noise).x[2]], mend_num_sol, mend_sol_noise, noise)
-            if diff < chi2.ppf(confidence, df)/2:
-                a_vals.append(i)
-        a_CI = [min(a_vals), max(a_vals)]
-        return a_CI
+        def test(a):
+            return -mend_mle(noise).fun - log_l([mend_mle(noise).x[0], a, mend_mle(noise).x[2]], mend_num_sol, mend_sol_noise(noise), noise) - chi2.ppf(confidence, df)/2
+        root1 = root_scalar(test, x0 = 0.5*mend_mle(noise).x[1], x1 = 0.9*mend_mle(noise).x[1])
+        root2 = root_scalar(test, x0 = 1.5*mend_mle(noise).x[1], x1 = 1.1*mend_mle(noise).x[1])
+        CI = [min(root1.root, root2.root), max(root1.root, root2.root)]
+        return CI
     elif param == "b":
-        for i in b:
-            diff = -mend_mle(noise).fun - log_l([mend_mle(noise).x[0], mend_mle(noise).x[1], i], mend_num_sol, mend_sol_noise, noise)
-            if diff < chi2.ppf(confidence, df)/2:
-                b_vals.append(i)
-        b_CI = [min(b_vals), max(b_vals)]
-        return b_CI
+        def test(b):
+            return -mend_mle(noise).fun - log_l([mend_mle(noise).x[0], mend_mle(noise).x[1], b], mend_num_sol, mend_sol_noise(noise), noise) - chi2.ppf(confidence, df)/2
+        root1 = root_scalar(test, x0 = 0.5*mend_mle(noise).x[2], x1 = 0.9*mend_mle(noise).x[2])
+        root2 = root_scalar(test, x0 = 1.5*mend_mle(noise).x[2], x1 = 1.1*mend_mle(noise).x[2])
+        CI = [min(root1.root, root2.root), max(root1.root, root2.root)]
+        return CI
+    elif param == "V0":
+        def test(V0):
+            return -mend_mle(noise).fun - log_l([V0, mend_mle(noise).x[1], mend_mle(noise).x[2]], mend_num_sol, mend_sol_noise(noise), noise) - chi2.ppf(confidence, df)/2
+        root1 = root_scalar(test, x0 = 0.5*mend_mle(noise).x[0], x1 = 0.9*mend_mle(noise).x[0])
+        root2 = root_scalar(test, x0 = 1.5*mend_mle(noise).x[0], x1 = 1.1*mend_mle(noise).x[0])
+        CI = [min(root1.root, root2.root), max(root1.root, root2.root)]
+        return CI
     else:
         print("Check param value")
- 
-
 
 start = timeit.default_timer()
 
 '''
-print("Profile Likelihood confidence interval (95%) for Exponential model (a), with noise 5%:", exp_CI(0.95, 0.05))
-print("Profile Likelihood confidence interval (99%) for Exponential model (a), with noise 5%:", exp_CI(0.99, 0.05))
-print("Profile Likelihood confidence interval (95%) for Exponential model (a), with noise 10%:", exp_CI(0.95, 0.1))
-print("Profile Likelihood confidence interval (99%) for Exponential model (a), with noise 10%:", exp_CI(0.99, 0.1))
+print("Profile Likelihood confidence interval (95%) for Exponential model (a), with noise 5%:", exp_CI(0.95, 0.05, "a"))
+print("Profile Likelihood confidence interval (99%) for Exponential model (a), with noise 5%:", exp_CI(0.99, 0.05, "a"))
+print("Profile Likelihood confidence interval (95%) for Exponential model (a), with noise 10%:", exp_CI(0.95, 0.1, "a"))
+print("Profile Likelihood confidence interval (99%) for Exponential model (a), with noise 10%:", exp_CI(0.99, 0.1, "a"))
+print("Profile Likelihood confidence interval (95%) for Exponential model (V0), with noise 5%:", exp_CI(0.95, 0.05, "V0"))
 #Runtime ~ 4 mins
 
 print("Profile Likelihood confidence interval (95%) for Logistic model (r), with noise 5%:", log_CI(0.95, 0.05, "r"))
 print("Profile Likelihood confidence interval (95%) for Logistic model (K), with noise 5%:", log_CI(0.95, 0.05, "K"))
+print("Profile Likelihood confidence interval (95%) for Logistic model (V0), with noise 5%:", log_CI(0.95, 0.05, "V0"))
 #Runtime ~ 7 mins
 
 print("Profile Likelihood confidence interval (95%) for Gompertz model (r), with noise 5%:", gomp_CI(0.95, 0.05, "r"))
 print("Profile Likelihood confidence interval (95%) for Gompertz model (K), with noise 5%:", gomp_CI(0.95, 0.05, "K"))
+print("Profile Likelihood confidence interval (95%) for Gompertz model (V0), with noise 5%:", gomp_CI(0.95, 0.05, "V0"))
 #Runtime ~ 8 mins
 
 print("Profile Likelihood confidence interval (95%) for Bertalanffy model (b), with noise 5%:", bert_CI(0.95, 0.05, "b"))
 print("Profile Likelihood confidence interval (95%) for Bertalanffy model (d), with noise 5%:", bert_CI(0.95, 0.05, "d"))
+print("Profile Likelihood confidence interval (95%) for Bertalanffy model (V0), with noise 5%:", bert_CI(0.95, 0.05, "V0"))
 #Runtime ~ 5 mins
-
 
 print("Profile Likelihood confidence interval (95%) for Mendelsohn model (a), with noise 5%:", mend_CI(0.95, 0.05, "a"))
 print("Profile Likelihood confidence interval (95%) for Mendelsohn model (b), with noise 5%:", mend_CI(0.95, 0.05, "b"))
+print("Profile Likelihood confidence interval (95%) for Mendelsohn model (V0), with noise 5%:", mend_CI(0.95, 0.05, "V0"))
 #Error - no values in range tried (Mendelsohn estimates inaccurate.)
 '''
 
