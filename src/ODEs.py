@@ -367,8 +367,8 @@ print('Time: ', stop - start)
 # Dosage Optimisation
 
 # Objective function with costant D
-def obj_function(D, v, time, c):
-    return v[-1]**2 + c*(D**2)*time[1]
+def obj_function(D, theta, v, time, c):
+    return v(time, theta, D)[-1]**2 + c*(D**2)*time[1]
 
 
 
@@ -623,15 +623,18 @@ class Logistic:
     # Dosage ODE
     def dos_ode(self, t, v, r, k, D):
         return r*v*(1-v/k) - D*v
-    # Dosage Numerical Solution with theta = [V0, r, k, D]
+    # Dosage Analytical Solution with theta = [V0, r, k]
+    def dos_sol(self, time, theta, D):
+        return theta[0]/((theta[0]*theta[1])/(theta[2]*(theta[1]-D)) + (1 - (theta[0]*theta[1])/(theta[2]*(theta[1]-D)))*np.exp((D-theta[1])*time))
+    # Dosage Numerical Solution with theta = [V0, r, k]
     def num_dos(self, time, theta):
-        return solve_ivp(self.dos_ode, time, [theta[0]], args=(theta[1], theta[2], theta[3]), t_eval = np.linspace(time[0], time[1], 101))
+        return solve_ivp(self.dos_ode, time, [theta[0]], args=(theta[1], theta[2]), t_eval = np.linspace(time[0], time[1], 101))
     # Solution with noise
-    def dos_noise(self, time, theta):
-        return self.num_dos(time, theta).y[0] * (1 + self.noise * np.random.normal(time[0],time[1],101))
+    def dos_noise(self, time, theta, D):
+        return self.dos_sol(time, theta, D) * (1 + self.noise * np.random.normal(time[0],time[1],101))
     # Find Estimate for D
     def D_est(self, time, theta, c):
-        return minimize(obj_function, 1, args=(self.dos_noise(time, theta), time, c))
+        return minimize(obj_function, 1, args=(theta, self.dos_noise, time, c))
     # Get Estimate for D
     def get_D(self, time, theta, c):
         print(self.D_est(time, theta, c).x)
@@ -805,8 +808,8 @@ class Bertalanffy:
 
 
 obj = Logistic(0.05)
-
-obj.get_D([0,10], [0.01, 5, 100, 4], 10000)
+print(obj.dos_sol([0,10], [1, 5, 100], 1))
+#obj.get_D([0,10], [0.01, 5, 100], 10000)
 # How to restrict D positive?
 
 #################################################################################################################################################################
