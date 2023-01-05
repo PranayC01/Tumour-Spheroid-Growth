@@ -103,6 +103,29 @@ class Exponential:
         plt.ylabel("Volume")
         plt.show()
 
+
+
+    # Dosage ODE
+    def dos_ode(self, t, v, a, D):
+        return a*v - D*v
+    # Dosage Analytical Solution with theta = [V0, a]
+    def dos_sol(self, time, theta, D):
+        return theta[0]*np.exp(theta[1]*time - D*time)
+    # Dosage Numerical Solution with theta = [V0, a]
+    def num_dos(self, time, theta, D):
+        return solve_ivp(self.dos_ode, time, [theta[0]], args=(theta[1], D), t_eval = np.linspace(time[0], time[-1], 101))
+    # Find Estimate for D
+    def D_est(self, time, theta, c):
+        return minimize(obj_function, 1, args=(theta, self.dos_sol, time, c))
+    # Get Estimate for D
+    def get_D(self, time, theta, c):
+        return self.D_est(time, theta, c).x[0]
+    # Objective vs D plot
+    def obj_func_plot(self, time, theta, c):
+        D = np.linspace(0,10,101)
+        obj = [obj_function(i, theta, self.dos_sol, time, c) for i in D]
+        plt.plot(D, obj)
+        plt.show()
     
 #################################################################################################################################################################
 
@@ -182,6 +205,30 @@ class Mendelsohn:
         plt.title("Mendelsohn model with V0 = "  + V0 + ", a = " + a + " and b = " + b)
         plt.xlabel("Time")
         plt.ylabel("Volume")
+        plt.show()
+
+
+
+    # Dosage ODE
+    def dos_ode(self, t, v, a, b, D):
+        return a*(v**b) - D*v
+    # Dosage Analytical Solution with theta = [V0, a, b]
+    def dos_sol(self, time, theta, D):
+        return (theta[1]/D + (theta[0]**(1-theta[2]) - (theta[1]/D))*np.exp((theta[2] - 1)*D*time))**(1/(1-theta[2]))
+    # Dosage Numerical Solution with theta = [V0, a, b]
+    def num_dos(self, time, theta, D):
+        return solve_ivp(self.dos_ode, time, [theta[0]], args=(theta[1], theta[2], D), t_eval = np.linspace(time[0], time[-1], 101))
+    # Find Estimate for D
+    def D_est(self, time, theta, c):
+        return minimize(obj_function, 1, args=(theta, self.dos_sol, time, c))
+    # Get Estimate for D
+    def get_D(self, time, theta, c):
+        return self.D_est(time, theta, c).x[0]
+    # Objective vs D plot
+    def obj_func_plot(self, time, theta, c):
+        D = np.linspace(0,10,101)
+        obj = [obj_function(i, theta, self.dos_sol, time, c) for i in D]
+        plt.plot(D, obj)
         plt.show()    
 
 
@@ -282,9 +329,8 @@ class Logistic:
         return minimize(obj_function, 1, args=(theta, self.dos_sol, time, c))
     # Get Estimate for D
     def get_D(self, time, theta, c):
-        print(self.D_est(time, theta, c).x[0])
-    
-    
+        return self.D_est(time, theta, c).x[0]
+    # Objective vs D plot
     def obj_func_plot(self, time, theta, c):
         D = np.linspace(0,10,101)
         obj = [obj_function(i, theta, self.dos_sol, time, c) for i in D]
@@ -373,6 +419,30 @@ class Gompertz:
         plt.ylabel("Volume")
         plt.show()
 
+    
+
+    # Dosage ODE
+    def dos_ode(self, t, v, r, k, D):
+        return r*np.log(k/v)*v - D*v
+    # Dosage Analytical Solution with theta = [V0, r, k]
+    def dos_sol(self, time, theta, D):
+        return theta[2] * np.exp(((D - theta[1]*np.log(theta[2]/theta[0]))*np.exp(-theta[1]*time) - D)/theta[1])
+    # Dosage Numerical Solution with theta = [V0, r, k]
+    def num_dos(self, time, theta, D):
+        return solve_ivp(self.dos_ode, time, [theta[0]], args=(theta[1], theta[2], D), t_eval = np.linspace(time[0], time[-1], 101))
+    # Find Estimate for D
+    def D_est(self, time, theta, c):
+        return minimize(obj_function, 1, args=(theta, self.dos_sol, time, c))
+    # Get Estimate for D
+    def get_D(self, time, theta, c):
+        return self.D_est(time, theta, c).x[0]
+    # Objective vs D plot
+    def obj_func_plot(self, time, theta, c):
+        D = np.linspace(0,10,101)
+        obj = [obj_function(i, theta, self.dos_sol, time, c) for i in D]
+        plt.plot(D, obj)
+        plt.show()    
+
 
 #################################################################################################################################################################
 
@@ -453,17 +523,48 @@ class Bertalanffy:
         plt.title("Bertalanffy model with V0 = "  + V0 + ", b = " + b + " and d = " + d)
         plt.xlabel("Time")
         plt.ylabel("Volume")
-        plt.show()    
+        plt.show()
+
+
+
+    # Dosage ODE
+    def dos_ode(self, t, v, b, d, D):
+        return b*(v**(2/3))-(d+D)*v
+    # Dosage Analytical Solution with theta = [V0, b, d]
+    def dos_sol(self, time, theta, D):
+        return ((theta[1]/(theta[2] + D))*(1 - np.exp(-(theta[2]+D)*time/3)) + (theta[0]**(1/3))*np.exp(-(theta[2]+D)*time/3))**3
+    # Dosage Numerical Solution with theta = [V0, b, d]
+    def num_dos(self, time, theta, D):
+        return solve_ivp(self.dos_ode, time, [theta[0]], args=(theta[1], theta[2], D), t_eval = np.linspace(time[0], time[-1], 101))
+    # Find Estimate for D
+    def D_est(self, time, theta, c):
+        return minimize(obj_function, 1, args=(theta, self.dos_sol, time, c))
+    # Get Estimate for D
+    def get_D(self, time, theta, c):
+        return self.D_est(time, theta, c).x[0]
+    # Objective vs D plot
+    def obj_func_plot(self, time, theta, c):
+        D = np.linspace(0,10,101)
+        obj = [obj_function(i, theta, self.dos_sol, time, c) for i in D]
+        plt.plot(D, obj)
+        plt.show()        
 
 
 #################################################################################################################################################################
 
 
-obj = Logistic(0.05)
+log = Logistic(0.05)
+exp = Exponential(0.05)
+mend = Mendelsohn(0.05)
+gomp = Gompertz(0.05)
+bert = Bertalanffy(0.05)
 
-obj.obj_func_plot(t_eval, [1, 5, 10], 0.0000001)
-obj.obj_func_plot(t_eval, [1, 5, 10], 1)
-obj.obj_func_plot(t_eval, [1, 5, 10], 100000000)
+log.obj_func_plot(t_eval, [1, 5, 10], 1)
+exp.obj_func_plot(t_eval, [1, 1], 1)
+mend.obj_func_plot(t_eval, [1, 1, 2], 1)
+gomp.obj_func_plot(t_eval, [1, 5, 10], 1)
+bert.obj_func_plot(t_eval, [1, 5, 5], 1)
+
 
 #################################################################################################################################################################
 
