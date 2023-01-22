@@ -1,9 +1,14 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.integrate import solve_ivp
+from scipy.integrate import solve_bvp
 from scipy.optimize import least_squares
 from scipy.optimize import minimize
 from scipy.optimize import root_scalar
+from scipy.optimize import brentq
+from scipy.optimize import ridder
+from scipy.optimize import bisect
+from scipy.special import lambertw
 from scipy.stats import chi2
 import timeit
 
@@ -126,21 +131,26 @@ class Exponential:
         obj = [obj_function(i, theta, self.dos_sol, time, c) for i in D]
         plt.plot(D, obj)
         plt.show()
-    
+
+
 #################################################################################################################################################################
 
 
 class Mendelsohn:
-    def __init__(self, noise):
+    def __init__(self, noise, V0, a, b, c):
         self.noise = noise
         self.data = self.mend_sol_noise()
+        self.a = a
+        self.b = b
+        self.c = c
+        self.V0 = V0
 
     # Mendelsohn ODE
     def ode(self, t, v, a, b):
         return a*(v**b)
-    # Analytical solution of Mendelsohn ODE theta = [V_0, a, b]
+    # Analytical solution of Mendelsohn ODE, theta = [V_0, a, b]
     def mend_sol(self, theta, t):
-        return ((1 - theta[2])*(theta[1]*t + (theta[0]**(1-theta[2]))/(1-theta[2])))**(1/(1-theta[2]))
+        return ((1 - theta[2])*theta[1]*t + theta[0]**(1-theta[2]))**(1/(1-theta[2]))
     # Numerical solution to Mendelsohn ODE, theta = [V0, a, b]
     def mend_num_sol(self, theta): 
         return solve_ivp(self.ode, [0, 10], [theta[0]], args = (theta[1], theta[2]), t_eval = np.linspace(0, 10, 101))
@@ -229,7 +239,25 @@ class Mendelsohn:
         D = np.linspace(0,10,101)
         obj = [obj_function(i, theta, self.dos_sol, time, c) for i in D]
         plt.plot(D, obj)
-        plt.show()    
+        plt.show()
+
+    # Optimal Control
+
+    # ODE System
+    def sys_ode(self, t, y):
+        v, p = y
+        return np.vstack((self.a*(v**self.b) + p*v**2/(2*self.c), -self.a*self.b*p*(v**(self.b-1)) - v*p**2/(2*self.c)))
+    # Boundary Conditions
+    def bc(self, v, p):
+        return np.array([v[0]-self.V0, p[-1] + 2*v[-1]])
+    # Numerical solution
+    def num_sol_opt(self, T):
+        t = np.linspace(0, T, 25)
+        y = np.zeros((2, t.size))
+        for i in range(t.size):
+            y[0, i] = (self.a + (self.V0**(1-self.b) - self.a)*np.exp((self.b - 1)*t[i]))**(1/(1-self.b))
+            y[1, i] = -(self.a + (self.V0**(1-self.b) - self.a)*np.exp((self.b - 1)*t[i]))**(1/(1-self.b))
+        return solve_bvp(self.sys_ode, self.bc, t, y, max_nodes=999)  
 
 
 #################################################################################################################################################################
@@ -237,16 +265,21 @@ class Mendelsohn:
 
 
 class Logistic:
-    def __init__(self, noise):
+    def __init__(self, noise, V0, r, k, c):
         self.noise = noise
         self.data = self.log_sol_noise()
+        self.V0 = V0
+        self.r = r
+        self.k = k
+        self.c = c
     
     # ODE
     def ode(self, t, v, r, k):
         return r*v*(1-v/k)
     # Analytical solution of Logistic ODE theta = [V_0, r, K]
     def log_sol(self, theta, t):
-        return (theta[0]/((theta[0]/theta[2])+(1 - theta[0]/theta[2])*np.exp(-theta[1]*t)))
+        #return (theta[0]/((theta[0]/theta[2])+(1 - theta[0]/theta[2])*np.exp(-theta[1]*t)))
+        return (theta[0]*theta[2])/(theta[0] + (theta[2] - theta[0])*np.exp(-theta[1]*t))
     # Numerical solution to Logistic ODE, theta = [V0, r, K]
     def log_num_sol(self, theta): 
         return solve_ivp(self.ode, [0, 10], [theta[0]], args = (theta[1], theta[2]), t_eval = np.linspace(0, 10, 101))
@@ -336,6 +369,34 @@ class Logistic:
         obj = [obj_function(i, theta, self.dos_sol, time, c) for i in D]
         plt.plot(D, obj)
         plt.show()
+
+    # Optimal Control
+
+    # System of ODEs, y = [v, p]
+    def sys_ode(self, t, y):
+        v, p = y
+        return np.vstack((self.r*v*(1-v/self.k) + (p*v**2)/(2*self.c), -self.r*p*(1-(2*v/self.k)) - (v*p**2)/(2*self.c)))
+    # Numerical solution of System of ODEs with intial conditions [V0, P0]
+    def num_sol_sys(self, T, V0, P0):
+        return solve_ivp(self.sys_ode, [0, T], [V0, P0], args=(self.r, self.k, self.c), t_eval = np.linspace(0, T, 101))
+    # Boundary conditions P = P(T)
+    def bc(self, v, p):
+        return np.array([v[0]-self.V0, p[-1] + 2*v[-1]])
+    def num_sol_opt(self, T):
+        t = np.linspace(0, T, 101)
+        y = np.zeros((2, t.size))
+        for i in range(t.size):
+            y[0, i] = (self.V0*self.k)/(self.V0 + (self.k - self.V0)*np.exp(-self.r*t[i]))
+            y[1, i] = -2*(self.V0*self.k)/(self.V0 + (self.k - self.V0)*np.exp(-self.r*t[i]))
+        return solve_bvp(self.sys_ode, self.bc, t, y, max_nodes=999999)
+    def get_v(self, T):
+        return self.num_sol_opt(T).y[0]
+    def get_p(self, T):
+        return self.num_sol_opt(T).y[1]
+    def opt_d(self, T):
+        return (self.get_v(T)*self.get_p(T))/(2*self.c)
+
+    
 
 
 #################################################################################################################################################################
@@ -441,7 +502,30 @@ class Gompertz:
         D = np.linspace(0,10,101)
         obj = [obj_function(i, theta, self.dos_sol, time, c) for i in D]
         plt.plot(D, obj)
-        plt.show()    
+        plt.show()
+
+    # Optimal Control, theta = [V0, r, k]
+    def coeff_root(self, B, V0, r, k, c, T):
+        #return B - B*np.exp(2*theta[1]*T) - (c*np.exp(theta[1]*T)/2)*np.log(B - c*np.log(theta[0]) + c*np.log(theta[2])) - c*theta[2]*T*np.exp(theta[1]*T)/2 + c*(np.log(theta[0]) - np.log(theta[2]))*np.exp(2*theta[1]*T) + c*np.exp(theta[1]*T)*np.log(theta[2]) - (c*np.exp(theta[1]*T)/2)*np.log(2*theta[1])
+        return np.exp((-2*B)/(c*np.exp(r*T))) + (2*k**2)*np.exp((-r*T + (4*c*r*(np.log(V0) - np.log(k)) - 4*r*B)*np.exp(r*T))/(2*c*r))/(4*c*r*(np.log(V0) - np.log(k)) - 4*r*B)
+    # Root Finder
+    def find_coeff(self, V0, r, k, c, T):
+        return brentq(self.coeff_root, c*np.log(V0/k), -c*np.log(V0/k), args=(V0, r, k, c, T), maxiter= 10000)    
+    def find_other_coeff(self, V0, r, k, c, T):
+        return 4*c*r*np.log(V0/k) - 4*self.find_coeff(V0, r, k, c, T)*r
+    def opt_d(self, V0, r, k, c, T):
+        t = np.linspace(0, T, 1001)
+        return -self.find_other_coeff(V0, r, k, c, T)*np.exp(r*t)/(2*c)
+    def opt_sol(self, V0, r, k, c, T):
+        t = np.linspace(0, T, 1001)
+        return k*np.exp(self.find_other_coeff(V0, r, k, c, T)*np.exp(r*t)/(4*c*r) + self.find_other_coeff(V0, r, k, c, T)/(c*np.exp(r*t)))
+    def co_state(self, V0, r, k, c, T):
+        t = np.linspace(0, T, 1001)
+        return (self.find_other_coeff(V0, r, k, c, T)/k)*np.exp(r*t - self.find_other_coeff(V0, r, k, c, T)*np.exp(r*t)/(4*c*r) - self.find_coeff(V0, r, k, c, T)/(c*np.exp(r*t)))
+    def plot_sol(self, V0, r, k, c, T):
+        t = np.linspace(0, T, 1001)
+        plt.plot(t, self.opt_sol(V0, r, k, c, T))
+        plt.show()
 
 
 #################################################################################################################################################################
@@ -553,17 +637,38 @@ class Bertalanffy:
 #################################################################################################################################################################
 
 
-log = Logistic(0.05)
+log = Logistic(0.05, 2, 1, 10, 1)
 exp = Exponential(0.05)
-mend = Mendelsohn(0.05)
+mend = Mendelsohn(0.05, 1, 1, 2, 1)
 gomp = Gompertz(0.05)
 bert = Bertalanffy(0.05)
-
+'''
 log.obj_func_plot(t_eval, [1, 5, 10], 1)
 exp.obj_func_plot(t_eval, [1, 1], 1)
 mend.obj_func_plot(t_eval, [1, 1, 2], 1)
 gomp.obj_func_plot(t_eval, [1, 5, 10], 1)
 bert.obj_func_plot(t_eval, [1, 5, 5], 1)
+'''
+'''
+#print(log.num_sol_opt(10))
+#print(log.get_p(10))
+plt.plot(np.linspace(0, 10, len(log.get_v(10))), log.get_v(10))
+plt.show()
+print(log.num_sol_opt(10))
+print(log.get_v(10))
+print(log.get_p(10))
+
+
+print(gomp.find_coeff(1, 1, 10, 1, 5))
+print(gomp.find_other_coeff(1, 1, 10, 1, 5))
+#print(gomp.opt_d(1, 1, 10, 10000, 5))
+print(gomp.opt_sol(1, 1, 10, 1, 5))
+print(4*np.log(1/10) - 4*gomp.find_coeff(1, 1, 10, 1, 5))
+print(gomp.co_state(1, 1, 10, 1, 5))
+gomp.plot_sol(1, 1, 10, 1, 10)
+'''
+print(mend.num_sol_opt(10))
+
 
 
 #################################################################################################################################################################
