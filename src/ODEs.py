@@ -132,6 +132,36 @@ class Exponential:
         plt.plot(D, obj)
         plt.show()
 
+    # Optimal Control
+
+    # Tumour Volume Trajectory
+    def v(self, t, V0, a, T, c):
+        return V0*np.exp(((-1/(2*T))*lambertw((2*(V0**2)*T*np.exp(2*a*T))/c) + a)*t)
+    # Co State
+    def p(self, t, V0, a, T, c):
+        return (-c/(V0*T))*lambertw((2*(V0**2)*T*np.exp(2*a*T))/c)*np.exp(((1/(2*T))*lambertw((2*(V0**2)*T*np.exp(2*a*T))/c) - a)*t)
+    # Optimal Dosage Scheduling
+    def D(self, t, V0, a, T, c):
+        return (1/(2*T))*lambertw((2*(V0**2)*T*np.exp(2*a*T))/c)
+    # Plot of Volume Trajectory
+    def plot_v(self, V0, a, T, c):
+        t = np.linspace(0, T, 101)
+        v = [self.v(i, V0, a, T, c) for i in t]
+        plt.plot(t, v)
+        plt.show()
+    # Plot of Co-State over time
+    def plot_p(self, V0, a, T, c):
+        t = np.linspace(0, T, 101)
+        p = [self.p(i, V0, a, T, c) for i in t]
+        plt.plot(t, p)
+        plt.show()
+    # Optimal Dosage Scheduling Plot
+    def plot_D(self, V0, a, T, c):
+        t = np.linspace(0, T, 101)
+        D = [self.D(i, V0, a, T, c) for i in t]
+        plt.plot(t, D)
+        plt.show()
+    
 
 #################################################################################################################################################################
 
@@ -243,21 +273,74 @@ class Mendelsohn:
 
     # Optimal Control
 
+    # For t > V0^(1-b)/a(b-1)
+    # Tumour Volume Trajectory
+    def v(self, t, V0, a, b, T, c):
+        return ((1-b)*a*t + V0**(1-b))**(1/(1-b))
+    # Co State
+    def p(self, t, V0, a, b, T, c):
+        return -2*(((1-b)*a*T + V0**(1-b))**(-1))*((1-b)*a*t + V0**(1-b))**(b/(b-1))
+    # Plot of Volume Trajectory
+    def plot_v_1(self, V0, a, b, T, c):
+        t = np.linspace(0, (V0**(1-b))/(a*(b-1)), 1000, endpoint=False)
+        v = [self.v(i, V0, a, b, T, c) for i in t]
+        plt.plot(t, v)
+        plt.show()
+    # Plot of Co-State over time
+    def plot_p(self, V0, a, b, T, c):
+        t = np.linspace(0, (V0**(1-b))/(a*(b-1)), 1000, endpoint=False)
+        p = [self.p(i, V0, a, b, T, c) for i in t]
+        plt.plot(t, p)
+        plt.show()
+
+    
+    # For t > V0^(1-b)/a(b-1)
     # ODE System
     def sys_ode(self, t, y):
         v, p = y
-        return np.vstack((self.a*(v**self.b) + p*v**2/(2*self.c), -self.a*self.b*p*(v**(self.b-1)) - v*p**2/(2*self.c)))
-    # Boundary Conditions
-    def bc(self, v, p):
-        return np.array([v[0]-self.V0, p[-1] + 2*v[-1]])
-    # Numerical solution
-    def num_sol_opt(self, T):
-        t = np.linspace(0, T, 25)
-        y = np.zeros((2, t.size))
-        for i in range(t.size):
-            y[0, i] = (self.a + (self.V0**(1-self.b) - self.a)*np.exp((self.b - 1)*t[i]))**(1/(1-self.b))
-            y[1, i] = -(self.a + (self.V0**(1-self.b) - self.a)*np.exp((self.b - 1)*t[i]))**(1/(1-self.b))
-        return solve_bvp(self.sys_ode, self.bc, t, y, max_nodes=999)  
+        return [self.a*(v**self.b) + p*v**2/(2*self.c), -self.a*self.b*p*(v**(self.b-1)) - v*p**2/(2*self.c)]
+    # Numerical solution of System of ODEs with intial conditions [V0, P0]
+    def num_sol_sys(self, P0, T, V0):
+        t_star = (V0**(1-self.b))/(self.a*(self.b - 1))
+        return solve_ivp(self.sys_ode, [t_star, T], [V0, P0], t_eval = np.linspace(t_star, T, 1000)[1:])
+    # Shooting Method
+    def res_bc(self, P0, T, V0):
+        return self.num_sol_sys(P0, T, V0).y[1][-1] + 2*(self.num_sol_sys(P0, T, V0).y[0][-1])
+    # Not a scalar (Root Result)
+    def find_p0(self, T, V0):
+        return root_scalar(self.res_bc, x0 = -5, x1 = -10, args=(T, V0), maxiter=500)
+    def get_p0(self, T, V0):
+        return self.find_p0(T, V0).root
+    def plot_res(self, T, V0):
+        p = np.linspace(0, -5, 101)
+        res = [self.res_bc(x, T, V0) for x in p]
+        plt.plot(p, res)
+        plt.show()
+    def get_v(self, T, V0):
+        p0 = self.get_p0(T, V0)
+        return self.num_sol_sys(p0, T, V0).y[0]
+    def get_p(self, T, V0):
+        p0 = self.get_p0(T, V0)
+        return self.num_sol_sys(p0, T, V0).y[1] 
+    def opt_d(self, T, V0):
+        return -((self.get_v(T, V0))*(self.get_p(T, V0)))/(2*self.c)
+    def plot_v(self, T, V0):
+        #t = np.linspace(0, T, 999)
+        t = np.linspace((V0**(1-self.b))/(self.a*(self.b-1)), T, 1000)[1:]
+        plt.plot(t, self.get_v(T, V0))
+        plt.ylabel("Volume")
+        plt.xlabel("Time")
+        V0 = str(V0)
+        plt.title("Mendelsohn Model of Tumour Volume with initial condition: V0 = " + V0)
+        plt.show()
+    def plot_d(self, T, V0):
+        t = np.linspace((V0**(1-self.b))/(self.a*(self.b-1)), T, 1000)[1:]
+        plt.plot(t, self.opt_d(T, V0))
+        plt.ylabel("Dosage")
+        plt.xlabel("Time")
+        V0 = str(V0)
+        plt.title("Mendelsohn Model of Optimal Dosage with initial condition: V0 = " + V0)
+        plt.show()
 
 
 #################################################################################################################################################################
@@ -375,26 +458,48 @@ class Logistic:
     # System of ODEs, y = [v, p]
     def sys_ode(self, t, y):
         v, p = y
-        return np.vstack((self.r*v*(1-v/self.k) + (p*v**2)/(2*self.c), -self.r*p*(1-(2*v/self.k)) - (v*p**2)/(2*self.c)))
+        return [self.r*v*(1-v/self.k) + (p*v**2)/(2*self.c), -self.r*p*(1-(2*v/self.k)) - (v*p**2)/(2*self.c)]
     # Numerical solution of System of ODEs with intial conditions [V0, P0]
-    def num_sol_sys(self, T, V0, P0):
-        return solve_ivp(self.sys_ode, [0, T], [V0, P0], args=(self.r, self.k, self.c), t_eval = np.linspace(0, T, 101))
-    # Boundary conditions P = P(T)
-    def bc(self, v, p):
-        return np.array([v[0]-self.V0, p[-1] + 2*v[-1]])
-    def num_sol_opt(self, T):
+    def num_sol_sys(self, P0, T, V0):
+        return solve_ivp(self.sys_ode, [0, T], [V0, P0], t_eval = np.linspace(0, T, 101))
+    # Shooting Method
+    def res_bc(self, P0, T, V0):
+        return self.num_sol_sys(P0, T, V0).y[1][-1] + 2*(self.num_sol_sys(P0, T, V0).y[0][-1])
+    # Not a scalar (Root Result)
+    def find_p0(self, T, V0):
+        return root_scalar(self.res_bc, x0 = -0.5, x1 = -1, args=(T, V0), maxiter=200)
+    def get_p0(self, T, V0):
+        return self.find_p0(T, V0).root
+    def plot_res(self, T, V0):
+        p = np.linspace(2, -2, 101)
+        res = [self.res_bc(x, T, V0) for x in p]
+        plt.plot(p, res)
+        plt.show()
+    def get_v(self, T, V0):
+        p0 = self.get_p0(T, V0)
+        return self.num_sol_sys(p0, T, V0).y[0]
+    def get_p(self, T, V0):
+        p0 = self.get_p0(T, V0)
+        return self.num_sol_sys(p0, T, V0).y[1] 
+    def opt_d(self, T, V0):
+        return -((self.get_v(T, V0))*(self.get_p(T, V0)))/(2*self.c)
+    def plot_v(self, T, V0):
         t = np.linspace(0, T, 101)
-        y = np.zeros((2, t.size))
-        for i in range(t.size):
-            y[0, i] = (self.V0*self.k)/(self.V0 + (self.k - self.V0)*np.exp(-self.r*t[i]))
-            y[1, i] = -2*(self.V0*self.k)/(self.V0 + (self.k - self.V0)*np.exp(-self.r*t[i]))
-        return solve_bvp(self.sys_ode, self.bc, t, y, max_nodes=999999)
-    def get_v(self, T):
-        return self.num_sol_opt(T).y[0]
-    def get_p(self, T):
-        return self.num_sol_opt(T).y[1]
-    def opt_d(self, T):
-        return (self.get_v(T)*self.get_p(T))/(2*self.c)
+        plt.plot(t, self.get_v(T, V0))
+        plt.ylabel("Volume")
+        plt.xlabel("Time")
+        V0 = str(V0)
+        plt.title("Logistic Model of Tumour Volume with initial condition: V0 = " + V0)
+        plt.show()
+    def plot_d(self, T, V0):
+        t = np.linspace(0, T, 101)
+        plt.plot(t, self.opt_d(T, V0))
+        plt.ylabel("Dosage")
+        plt.xlabel("Time")
+        V0 = str(V0)
+        plt.title("Logistic Model of Optimal Dosage with initial condition: V0 = " + V0)
+        plt.show()
+
 
     
 
@@ -510,7 +615,7 @@ class Gompertz:
         return np.exp((-2*B)/(c*np.exp(r*T))) + (2*k**2)*np.exp((-r*T + (4*c*r*(np.log(V0) - np.log(k)) - 4*r*B)*np.exp(r*T))/(2*c*r))/(4*c*r*(np.log(V0) - np.log(k)) - 4*r*B)
     # Root Finder
     def find_coeff(self, V0, r, k, c, T):
-        return brentq(self.coeff_root, c*np.log(V0/k), -c*np.log(V0/k), args=(V0, r, k, c, T), maxiter= 10000)    
+        return brentq(self.coeff_root, c*np.log(V0/k), -c*np.log(V0/k), args=(V0, r, k, c, T), maxiter= 10000, xtol=10**(-6))    
     def find_other_coeff(self, V0, r, k, c, T):
         return 4*c*r*np.log(V0/k) - 4*self.find_coeff(V0, r, k, c, T)*r
     def opt_d(self, V0, r, k, c, T):
@@ -526,6 +631,8 @@ class Gompertz:
         t = np.linspace(0, T, 1001)
         plt.plot(t, self.opt_sol(V0, r, k, c, T))
         plt.show()
+    def A(self, B, c, r, V0, k):
+        return 4*c*r*np.log(V0/k) - 4*B*r
 
 
 #################################################################################################################################################################
@@ -533,9 +640,13 @@ class Gompertz:
 
 
 class Bertalanffy:
-    def __init__(self, noise):
+    def __init__(self, noise, V0, b, d, c):
         self.noise = noise
         self.data = self.bert_sol_noise()
+        self.V0 = V0
+        self.b = b
+        self.d = d
+        self.c = c
     
     # ODE
     def ode(self, t, v, b, d):
@@ -631,17 +742,65 @@ class Bertalanffy:
         D = np.linspace(0,10,101)
         obj = [obj_function(i, theta, self.dos_sol, time, c) for i in D]
         plt.plot(D, obj)
-        plt.show()        
+        plt.show()
+
+    # Optimal Control
+    # System of ODEs, y = [v, p]
+    def sys_ode(self, t, y):
+        v, p = y
+        return [self.b*(v**(2/3)) - self.d*v + (p*(v**2))/(2*self.c), self.d*p - (2/3)*self.b*p*(v**(-1/3)) - ((p**2)*v)/(2*self.c)]      
+    # Numerical solution of System of ODEs with intial conditions [V0, P0]
+    def num_sol_sys(self, P0, T, V0):
+        return solve_ivp(self.sys_ode, [0, T], [V0, P0], t_eval = np.linspace(0, T, 101))
+    # Shooting Method
+    def res_bc(self, P0, T, V0):
+        return self.num_sol_sys(P0, T, V0).y[1][-1] + 2*(self.num_sol_sys(P0, T, V0).y[0][-1])
+    # Not a scalar (Root Result)
+    def find_p0(self, T, V0):
+        return root_scalar(self.res_bc, x0 = -1, x1 = -1.5, args=(T, V0), maxiter=1000)
+    def get_p0(self, T, V0):
+        return self.find_p0(T, V0).root
+    def plot_res(self, T, V0):
+        p = np.linspace(-0.1, 0.5, 101)
+        res = [self.res_bc(x, T, V0) for x in p]
+        plt.plot(p, res)
+        plt.show()
+    def get_v(self, T, V0):
+        p0 = self.get_p0(T, V0)
+        return self.num_sol_sys(p0, T, V0).y[0]
+    def get_p(self, T, V0):
+        p0 = self.get_p0(T, V0)
+        return self.num_sol_sys(p0, T, V0).y[1] 
+    def opt_d(self, T, V0):
+        return -((self.get_v(T, V0))*(self.get_p(T, V0)))/(2*self.c)
+    def plot_v(self, T, V0):
+        t = np.linspace(0, T, 101)
+        plt.plot(t, self.get_v(T, V0))
+        plt.ylabel("Volume")
+        plt.xlabel("Time")
+        V0 = str(V0)
+        plt.title("Bertalanffy Model of Tumour Volume with initial condition: V0 = " + V0)
+        plt.show()
+    def plot_d(self, T, V0):
+        t = np.linspace(0, T, 101)
+        plt.plot(t, self.opt_d(T, V0))
+        plt.ylabel("Dosage")
+        plt.xlabel("Time")
+        V0 = str(V0)
+        plt.title("Bertalanffy Model of Optimal Dosage with initial condition: V0 = " + V0)
+        plt.show()  
+
+
 
 
 #################################################################################################################################################################
 
 
-log = Logistic(0.05, 2, 1, 10, 1)
+log = Logistic(0.05, 5, 1, 10, 10)
 exp = Exponential(0.05)
 mend = Mendelsohn(0.05, 1, 1, 2, 1)
 gomp = Gompertz(0.05)
-bert = Bertalanffy(0.05)
+bert = Bertalanffy(0.05, 1, 2, 1, 1)
 '''
 log.obj_func_plot(t_eval, [1, 5, 10], 1)
 exp.obj_func_plot(t_eval, [1, 1], 1)
@@ -665,9 +824,49 @@ print(gomp.find_other_coeff(1, 1, 10, 1, 5))
 print(gomp.opt_sol(1, 1, 10, 1, 5))
 print(4*np.log(1/10) - 4*gomp.find_coeff(1, 1, 10, 1, 5))
 print(gomp.co_state(1, 1, 10, 1, 5))
-gomp.plot_sol(1, 1, 10, 1, 10)
+gomp.plot_sol(1, 1, 10, 10000, 5)
+
+A = gomp.A(-1, 1, 1, 1, 10)
+print(A)
+print(10*np.exp(A/(4) -1))
 '''
-print(mend.num_sol_opt(10))
+
+
+#print(log.num_sol_sys(10, 1, -1).y)
+#print(log.num_sol_sys(10, 1, -5).y)
+#log.plot_v(10, 1)
+#print(log.find_p0(10, 1))
+#print(log.res_bc(-0.012158211746539478, 10, 1))
+#print(log.num_sol_sys(log.find_p0(10, 1).root, 10, 1))
+#log.plot_res(10, 1)
+#print(log.opt_d(10, 1))
+#log.plot_d(2, 9.99)
+#print(log.find_p0(10, 1))
+
+
+#print(bert.get_v(10, 1))
+#print(bert.find_p0(10, 1))
+#bert.plot_v(10, 1)
+#print(bert.get_v(10, 1))
+#print(bert.get_p(10, 1))
+#bert.num_sol_sys(bert.get_p(10, 1), 10, 1)
+#bert.plot_res(10, 1)
+#print(bert.opt_d(10, 1))
+#bert.plot_d(10, 1)
+
+
+#exp.plot_v(2, 2, 10, 0.001)
+#exp.plot_p(2, 2, 10, 0.001)
+#exp.plot_D(2, 2, 10, 0.001)
+
+
+#print(mend.num_sol_sys(-1, 10, 1))
+mend.plot_v(10, 1)
+#mend.plot_res(10, 1)
+#print(mend.num_sol_sys(-4, 10, 1))
+mend.plot_v_1(1, 1, 2, 10, 1)
+#mend.plot_p(1, 1, 2, 10, 1)
+#print(mend.num_sol_sys(-1, 10, 1))
 
 
 
