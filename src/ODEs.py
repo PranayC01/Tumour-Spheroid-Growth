@@ -1,13 +1,9 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.integrate import solve_ivp
-from scipy.integrate import solve_bvp
 from scipy.optimize import least_squares
 from scipy.optimize import minimize
 from scipy.optimize import root_scalar
-from scipy.optimize import brentq
-from scipy.optimize import ridder
-from scipy.optimize import bisect
 from scipy.special import lambertw
 from scipy.stats import chi2
 import timeit
@@ -136,30 +132,57 @@ class Exponential:
 
     # Tumour Volume Trajectory
     def v(self, t, V0, a, T, c):
-        return V0*np.exp(((-1/(2*T))*lambertw((2*(V0**2)*T*np.exp(2*a*T))/c) + a)*t)
+        return V0*np.exp(((-1/(2*T))*np.real(lambertw((2*(V0**2)*T*np.exp(2*a*T))/c)) + a)*t)
     # Co State
     def p(self, t, V0, a, T, c):
-        return (-c/(V0*T))*lambertw((2*(V0**2)*T*np.exp(2*a*T))/c)*np.exp(((1/(2*T))*lambertw((2*(V0**2)*T*np.exp(2*a*T))/c) - a)*t)
+        return (-c/(V0*T))*np.real(lambertw((2*(V0**2)*T*np.exp(2*a*T))/c))*np.exp(((1/(2*T))*lambertw((2*(V0**2)*T*np.exp(2*a*T))/c) - a)*t)
     # Optimal Dosage Scheduling
     def D(self, t, V0, a, T, c):
-        return (1/(2*T))*lambertw((2*(V0**2)*T*np.exp(2*a*T))/c)
+        return (1/(2*T))*np.real(lambertw((2*(V0**2)*T*np.exp(2*a*T))/c))
     # Plot of Volume Trajectory
     def plot_v(self, V0, a, T, c):
         t = np.linspace(0, T, 101)
         v = [self.v(i, V0, a, T, c) for i in t]
         plt.plot(t, v)
+        V0 = str(V0)
+        a = str(a)
+        plt.title("Exponential Volume Trajectory with V0 = " + V0 + ", a = " +  a)
+        plt.ylabel("Volume")
+        plt.xlabel("Time")
         plt.show()
     # Plot of Co-State over time
     def plot_p(self, V0, a, T, c):
         t = np.linspace(0, T, 101)
         p = [self.p(i, V0, a, T, c) for i in t]
         plt.plot(t, p)
+        V0 = str(V0)
+        a = str(a)
+        plt.title("Exponential Co-state Trajectory with V0 = " + V0 + ", a = " +  a)
+        plt.ylabel("Co-state")
+        plt.xlabel("Time")
         plt.show()
     # Optimal Dosage Scheduling Plot
     def plot_D(self, V0, a, T, c):
         t = np.linspace(0, T, 101)
         D = [self.D(i, V0, a, T, c) for i in t]
         plt.plot(t, D)
+        V0 = str(V0)
+        a = str(a)
+        plt.title("Exponential Dosage Schedule with V0 = " + V0 + ", a = " +  a)
+        plt.ylabel("Dosage")
+        plt.xlabel("Time")
+        plt.show()
+    # Plot Comparison of Volume and Dosage over Time
+    def plot_v_D(self, V0, a, T, c):
+        t = np.linspace(0, T, 101)
+        v = [self.v(i, V0, a, T, c) for i in t]
+        D = [self.D(i, V0, a, T, c) for i in t]
+        plt.plot(t, v, label = "Volume")
+        plt.plot(t, D, label = "Dosage")
+        plt.legend()
+        plt.title("Volume/Dosage Plot for Exponential Model")
+        plt.ylabel("Volume/Dosage")
+        plt.xlabel("Time")
         plt.show()
     
 
@@ -303,16 +326,16 @@ class Mendelsohn:
     def num_sol_sys(self, P0, T, V0):
         t_star = (V0**(1-self.b))/(self.a*(self.b - 1))
         return solve_ivp(self.sys_ode, [t_star, T], [V0, P0], t_eval = np.linspace(t_star, T, 1000)[1:])
-    # Shooting Method
+    # Shooting Method Residual
     def res_bc(self, P0, T, V0):
         return self.num_sol_sys(P0, T, V0).y[1][-1] + 2*(self.num_sol_sys(P0, T, V0).y[0][-1])
     # Not a scalar (Root Result)
     def find_p0(self, T, V0):
-        return root_scalar(self.res_bc, x0 = -5, x1 = -10, args=(T, V0), maxiter=500)
+        return root_scalar(self.res_bc, x0 = -41, x1 = -10, args=(T, V0), maxiter=5000)
     def get_p0(self, T, V0):
         return self.find_p0(T, V0).root
     def plot_res(self, T, V0):
-        p = np.linspace(0, -5, 101)
+        p = np.linspace(-0.1, -40, 101)
         res = [self.res_bc(x, T, V0) for x in p]
         plt.plot(p, res)
         plt.show()
@@ -340,6 +363,16 @@ class Mendelsohn:
         plt.xlabel("Time")
         V0 = str(V0)
         plt.title("Mendelsohn Model of Optimal Dosage with initial condition: V0 = " + V0)
+        plt.show()
+    # Volume/Dosage Plot
+    def plot_v_d(self, T, V0):
+        t = np.linspace((V0**(1-self.b))/(self.a*(self.b-1)), T, 1000)[1:]
+        plt.plot(t, self.get_v(T, V0), label = "Volume")
+        plt.plot(t, self.opt_d(T, V0), label = "Dosage")
+        plt.legend()
+        plt.title("Volume/Dosage over time for Mendelsohn model")
+        plt.ylabel("Volume/Dosage")
+        plt.xlabel("Time")
         plt.show()
 
 
@@ -610,29 +643,55 @@ class Gompertz:
         plt.show()
 
     # Optimal Control, theta = [V0, r, k]
-    def coeff_root(self, B, V0, r, k, c, T):
-        #return B - B*np.exp(2*theta[1]*T) - (c*np.exp(theta[1]*T)/2)*np.log(B - c*np.log(theta[0]) + c*np.log(theta[2])) - c*theta[2]*T*np.exp(theta[1]*T)/2 + c*(np.log(theta[0]) - np.log(theta[2]))*np.exp(2*theta[1]*T) + c*np.exp(theta[1]*T)*np.log(theta[2]) - (c*np.exp(theta[1]*T)/2)*np.log(2*theta[1])
-        return np.exp((-2*B)/(c*np.exp(r*T))) + (2*k**2)*np.exp((-r*T + (4*c*r*(np.log(V0) - np.log(k)) - 4*r*B)*np.exp(r*T))/(2*c*r))/(4*c*r*(np.log(V0) - np.log(k)) - 4*r*B)
-    # Root Finder
-    def find_coeff(self, V0, r, k, c, T):
-        return brentq(self.coeff_root, c*np.log(V0/k), -c*np.log(V0/k), args=(V0, r, k, c, T), maxiter= 10000, xtol=10**(-6))    
-    def find_other_coeff(self, V0, r, k, c, T):
-        return 4*c*r*np.log(V0/k) - 4*self.find_coeff(V0, r, k, c, T)*r
-    def opt_d(self, V0, r, k, c, T):
-        t = np.linspace(0, T, 1001)
-        return -self.find_other_coeff(V0, r, k, c, T)*np.exp(r*t)/(2*c)
-    def opt_sol(self, V0, r, k, c, T):
-        t = np.linspace(0, T, 1001)
-        return k*np.exp(self.find_other_coeff(V0, r, k, c, T)*np.exp(r*t)/(4*c*r) + self.find_other_coeff(V0, r, k, c, T)/(c*np.exp(r*t)))
-    def co_state(self, V0, r, k, c, T):
-        t = np.linspace(0, T, 1001)
-        return (self.find_other_coeff(V0, r, k, c, T)/k)*np.exp(r*t - self.find_other_coeff(V0, r, k, c, T)*np.exp(r*t)/(4*c*r) - self.find_coeff(V0, r, k, c, T)/(c*np.exp(r*t)))
-    def plot_sol(self, V0, r, k, c, T):
-        t = np.linspace(0, T, 1001)
-        plt.plot(t, self.opt_sol(V0, r, k, c, T))
+
+    # Tumour Volume Trajectory
+    def v(self, t, V0, r, K, T, c):
+        g = (1 - np.exp(-2*r*T))*((K**2)/(c*r))*((V0/K)**(2*np.exp(-r*T)))
+        return K*np.exp(((np.real(lambertw(g)))*(np.exp(-r*t) - np.exp(r*t)))/(2*(np.exp(r*T) - np.exp(-r*T))))*((V0/K)**(np.exp(-r*t)))
+    # Co State
+    def p(self, t, V0, r, K, T, c):
+        g = (1 - np.exp(-2*r*T))*((K**2)/(c*r))*((V0/K)**(2*np.exp(-r*T)))
+        return -((2*c*r*np.real(lambertw(g))*np.exp(r*t))/(K*(np.exp(r*T) - np.exp(-r*T))))*(np.exp(((lambertw(g))*(np.exp(r*t) - np.exp(-r*t)))/(2*(np.exp(r*T) - np.exp(-r*T))))*((V0/K)**(-np.exp(-r*t))))
+    # Optimal Dosage Scheduling
+    def D(self, t, V0, r, K, T, c):
+        g = (1 - np.exp(-2*r*T))*((K**2)/(c*r))*((V0/K)**(2*np.exp(-r*T)))
+        return (r*np.real(lambertw(g))*np.exp(r*t))/(np.exp(r*T) - np.exp(-r*T))
+    # Plot of Volume Trajectory
+    def plot_v(self, V0, r, K, T, c):
+        t = np.linspace(0, T, 101)
+        v = [self.v(i, V0, r, K, T, c) for i in t]
+        plt.plot(t, v)
+        V0 = str(V0)
+        r = str(r)
+        K = str(K)
+        plt.title("Gompertz Volume Trajectory with V0 = " + V0 + ", r = " + r + ", K = " + K)
+        plt.ylabel("Volume")
+        plt.xlabel("Time")
         plt.show()
-    def A(self, B, c, r, V0, k):
-        return 4*c*r*np.log(V0/k) - 4*B*r
+    # Plot of Co-State over time
+    def plot_p(self, V0, r, K, T, c):
+        t = np.linspace(0, T, 101)
+        p = [self.p(i, V0, r, K, T, c) for i in t]
+        plt.plot(t, p)
+        V0 = str(V0)
+        r = str(r)
+        K = str(K)
+        plt.title("Gompertz Co-State Trajectory with V0 = " + V0 + ", r = " + r + ", K = " + K)
+        plt.ylabel("Co-State")
+        plt.xlabel("Time")
+        plt.show()
+    # Optimal Dosage Scheduling Plot
+    def plot_D(self, V0, r, K, T, c):
+        t = np.linspace(0, T, 101)
+        D = [self.D(i, V0, r, K, T, c) for i in t]
+        plt.plot(t, D)
+        V0 = str(V0)
+        r = str(r)
+        K = str(K)
+        plt.title("Gompertz Dosage Schedule with V0 = " + V0 + ", r = " + r + ", K = " + K)
+        plt.ylabel("Dosage")
+        plt.xlabel("Time")
+        plt.show()
 
 
 #################################################################################################################################################################
@@ -798,9 +857,10 @@ class Bertalanffy:
 
 log = Logistic(0.05, 5, 1, 10, 10)
 exp = Exponential(0.05)
-mend = Mendelsohn(0.05, 1, 1, 2, 1)
+mend = Mendelsohn(0.05, 5, 2, 3, 1)
 gomp = Gompertz(0.05)
 bert = Bertalanffy(0.05, 1, 2, 1, 1)
+
 '''
 log.obj_func_plot(t_eval, [1, 5, 10], 1)
 exp.obj_func_plot(t_eval, [1, 1], 1)
@@ -809,8 +869,8 @@ gomp.obj_func_plot(t_eval, [1, 5, 10], 1)
 bert.obj_func_plot(t_eval, [1, 5, 5], 1)
 '''
 '''
-#print(log.num_sol_opt(10))
-#print(log.get_p(10))
+print(log.num_sol_opt(10))
+print(log.get_p(10))
 plt.plot(np.linspace(0, 10, len(log.get_v(10))), log.get_v(10))
 plt.show()
 print(log.num_sol_opt(10))
@@ -825,51 +885,47 @@ print(gomp.opt_sol(1, 1, 10, 1, 5))
 print(4*np.log(1/10) - 4*gomp.find_coeff(1, 1, 10, 1, 5))
 print(gomp.co_state(1, 1, 10, 1, 5))
 gomp.plot_sol(1, 1, 10, 10000, 5)
-
-A = gomp.A(-1, 1, 1, 1, 10)
-print(A)
-print(10*np.exp(A/(4) -1))
 '''
 
 
-#print(log.num_sol_sys(10, 1, -1).y)
-#print(log.num_sol_sys(10, 1, -5).y)
-#log.plot_v(10, 1)
-#print(log.find_p0(10, 1))
-#print(log.res_bc(-0.012158211746539478, 10, 1))
-#print(log.num_sol_sys(log.find_p0(10, 1).root, 10, 1))
-#log.plot_res(10, 1)
-#print(log.opt_d(10, 1))
-#log.plot_d(2, 9.99)
-#print(log.find_p0(10, 1))
-
-
-#print(bert.get_v(10, 1))
-#print(bert.find_p0(10, 1))
-#bert.plot_v(10, 1)
-#print(bert.get_v(10, 1))
-#print(bert.get_p(10, 1))
-#bert.num_sol_sys(bert.get_p(10, 1), 10, 1)
-#bert.plot_res(10, 1)
-#print(bert.opt_d(10, 1))
-#bert.plot_d(10, 1)
-
-
-#exp.plot_v(2, 2, 10, 0.001)
-#exp.plot_p(2, 2, 10, 0.001)
-#exp.plot_D(2, 2, 10, 0.001)
-
-
-#print(mend.num_sol_sys(-1, 10, 1))
-mend.plot_v(10, 1)
-#mend.plot_res(10, 1)
-#print(mend.num_sol_sys(-4, 10, 1))
-mend.plot_v_1(1, 1, 2, 10, 1)
-#mend.plot_p(1, 1, 2, 10, 1)
-#print(mend.num_sol_sys(-1, 10, 1))
+# print(log.num_sol_sys(10, 1, -1).y)
+# print(log.num_sol_sys(10, 1, -5).y)
+# log.plot_v(10, 1)
+# print(log.find_p0(10, 1))
+# print(log.num_sol_sys(log.find_p0(10, 1).root, 10, 1))
+# # log.plot_res(10, 1)
+# print(log.opt_d(10, 1))
+# log.plot_d(2, 9.99)
 
 
 
+# print(bert.get_v(10, 1))
+# print(bert.get_p(10, 1))
+# print(bert.opt_d(10, 1))
+# bert.plot_v(10, 1)
+# bert.plot_d(10, 1)
+
+
+# exp.plot_v(2, 2, 10, 0.001)
+# exp.plot_p(2, 2, 10, 0.001)
+# exp.plot_D(2, 2, 10, 0.001)
+# exp.plot_v_D(2, 1, 10, 1)
+
+
+# mend.plot_v(10, 1)
+# mend.plot_res(10, 1)
+# mend.plot_v_1(1, 1, 2, 10, 1)
+# mend.plot_p(1, 1, 2, 10, 1)
+
+
+# gomp.plot_v(1, 5, 20, 10, 0.000001)
+# gomp.plot_p(1, 5, 20, 10, 1)
+# gomp.plot_D(1, 5, 20, 10, 0.000001)
+#print([np.real(gomp.p(i, 1, 5, 20, 10, 0.001)) for i in np.linspace(0, 10, 101)])
+# print(mend.res_bc(-0.001,10,2))
+mend.plot_res(10, 5)
+mend.plot_v_d(10, 5)
+print(mend.num_sol_sys(-40, 10, 5))
 #################################################################################################################################################################
 
 
