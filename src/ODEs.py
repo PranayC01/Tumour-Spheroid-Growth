@@ -6,16 +6,18 @@ from scipy.optimize import minimize
 from scipy.optimize import root_scalar
 from scipy.special import lambertw
 from scipy.stats import chi2
+from tabulate import tabulate
 import timeit
 
 #################################################################################################################################################################
 # Profile Likelihood
 
-n=101
+
 # g is analytical solution for an ODE, v = g*(1 + noise*N(0,1)).
 
 def log_l(theta, g, v, noise):
-    log_l = -(n/2)*np.log(noise**2*(2*np.pi)) -n/(2*noise**2) - (1/(2*noise**2))*np.sum(np.square(v)/np.square(g(theta).y[0]) - 2*v/g(theta).y[0]) - np.sum(np.log(g(theta).y[0]))
+    n=101
+    log_l = -(n/2)*np.log((noise**2)*(2*np.pi)) -n/(2*noise**2) - (1/(2*noise**2))*np.sum(np.square(v)/np.square(g(theta).y[0]) - 2*v/g(theta).y[0]) - np.sum(np.log(g(theta).y[0]))
     return log_l
 
 def neg_log_l(theta, g, v, noise):
@@ -31,68 +33,77 @@ def obj_function(D, theta, v, time, c):
 
 #################################################################################################################################################################
 
-#Classes
+# Classes
 
-t_eval = np.linspace(0, 10, 101)
+t_eval = np.linspace(0, 10, 1001)
+np.random.seed(1)
+X = np.random.normal(0, 1, 1001)
 
 class Exponential:
-    def __init__(self, noise):
+    def __init__(self, noise, V0, a):
         self.noise = noise
-        self.data = self.exp_sol_noise()
+        self.a = a
+        self.V0 = V0
+        self.data = self.exp_sol_noise([V0, a])
 
+    
     # Exponential ODE
     def ode(self, t, v, a):
         return a*v
-    # Analytical solution of Exponential ODE theta = [V_0, a]
+    # Analytical solution of Exponential ODE theta = [V0, a]
     def exp_sol(self, theta, t):
         return theta[0]*np.exp(theta[1]*t)
     # Numerical solution to Exponential ODE, theta = [V0, a]
     def exp_num_sol(self, theta):
         return solve_ivp(self.ode, [0, 10], [theta[0]], args = (theta[1],), t_eval = np.linspace(0, 10, 101))
     # Solution with noise
-    def exp_sol_noise(self):
-        return self.exp_sol([0.01, 1], t_eval) * (1 + self.noise * np.random.normal(0,1,101))
+    def exp_sol_noise(self, theta):
+        np.random.seed(1)
+        X = np.random.normal(0, 1, 1001)
+        return self.exp_sol(theta, t_eval) * (1 + self.noise * X)
     
-    # Residual
-    def exp_res(self, theta):
-        return self.exp_sol(theta, t_eval) - self.data
-    # Set Least Squares estimates
-    def l_squares(self):
-        theta0 = [0.01, 1]
-        return least_squares(self.exp_res, theta0)
-    # Get Least Squares estimates
-    def get_l_s(self):
-        print(self.l_squares().x)
+    
+    # Log-likelihood for Exponential Model
+    def log_l(self, theta, noise):
+        n=1001
+        g = self.exp_sol(theta, np.linspace(0, 10, n))
+        log_l = -(n/2)*np.log((noise**2)*(2*np.pi)) -n/(2*noise**2) - (1/(2*noise**2))*np.sum(np.square(self.data)/np.square(g) - 2*self.data/g) - np.sum(np.log(g))
+        return log_l
+    
+    # Negative Log-Likelihood
+    def neg_log_l(self, theta, noise):
+        return -self.log_l(theta, noise)
     
     # Set MLE estimates
-    def exp_mle(self): 
-        return minimize(neg_log_l, [0.01, 1], method = 'Nelder-Mead', args=(self.exp_num_sol, self.data, self.noise))
+    def exp_mle(self, guess): 
+        return minimize(self.neg_log_l, guess, method = 'Nelder-Mead', args=(self.noise))
     # Get MLE estimates
-    def get_mle(self):
-        print(self.exp_mle().x)
+    def get_mle(self, guess):
+        return self.exp_mle(guess).x
     
     # Set PL CI
-    def exp_CI(self, confidence, param):
+    def exp_CI(self, guess, confidence, param):
         df = 1
+        mle = self.exp_mle(guess)
         if param == "a":
             def test(a):
-                return -self.exp_mle().fun - log_l([self.exp_mle().x[0], a], self.exp_num_sol, self.data, self.noise) - chi2.ppf(confidence, df)/2
-            root1 = root_scalar(test, x0 = 0.5*self.exp_mle().x[1], x1 = 0.9*self.exp_mle().x[1])
-            root2 = root_scalar(test, x0 = 1.5*self.exp_mle().x[1], x1 = 1.1*self.exp_mle().x[1])
+                return -mle.fun - self.log_l([mle.x[0], a], self.noise) - chi2.ppf(confidence, df)/2
+            root1 = root_scalar(test, x0 = mle.x[1], x1 = 0.8*mle.x[1])
+            root2 = root_scalar(test, x0 = mle.x[1], x1 = 1.2*mle.x[1])
             CI = [min(root1.root, root2.root), max(root1.root, root2.root)]
             return CI
         elif param == "V0":
             def test(V0):
-                return -self.exp_mle().fun - log_l([V0, self.exp_mle().x[1]], self.exp_num_sol, self.data, self.noise) - chi2.ppf(confidence, df)/2            
-            root1 = root_scalar(test, x0 = 0.5*self.exp_mle().x[0], x1 = 0.9*self.exp_mle().x[0])
-            root2 = root_scalar(test, x0 = 1.5*self.exp_mle().x[0], x1 = 1.1*self.exp_mle().x[0])
+                return -mle.fun - self.log_l([V0, mle.x[1]], self.noise) - chi2.ppf(confidence, df)/2            
+            root1 = root_scalar(test, x0 = 0.99*mle.x[0], x1 = 0.8*mle.x[0])
+            root2 = root_scalar(test, x0 = 1.01*mle.x[0], x1 = 1.2*mle.x[0])
             CI = [min(root1.root, root2.root), max(root1.root, root2.root)]
             return CI
         else:
             print("Check param value")
     # Get PL CI
-    def get_CI(self, confidence, param):
-        print(self.exp_CI(confidence, param))
+    def get_CI(self, guess, confidence, param):
+        print(self.exp_CI(guess, confidence, param))
 
     # Plot general solution
     def plot(self, theta):
@@ -110,21 +121,21 @@ class Exponential:
     def dos_ode(self, t, v, a, D):
         return a*v - D*v
     # Dosage Analytical Solution with theta = [V0, a]
-    def dos_sol(self, time, theta, D):
-        return theta[0]*np.exp(theta[1]*time - D*time)
+    def dos_sol(self, t, theta, D):
+        return theta[0]*np.exp(theta[1]*t - D*t)
     # Dosage Numerical Solution with theta = [V0, a]
-    def num_dos(self, time, theta, D):
-        return solve_ivp(self.dos_ode, time, [theta[0]], args=(theta[1], D), t_eval = np.linspace(time[0], time[-1], 101))
+    def num_dos(self, t, theta, D):
+        return solve_ivp(self.dos_ode, t, [theta[0]], args=(theta[1], D), t_eval = np.linspace(t[0], t[-1], 101))
     # Find Estimate for D
-    def D_est(self, time, theta, c):
-        return minimize(obj_function, 1, args=(theta, self.dos_sol, time, c))
+    def D_est(self, t, theta, c):
+        return minimize(obj_function, 1, args=(theta, self.dos_sol, t, c))
     # Get Estimate for D
-    def get_D(self, time, theta, c):
-        return self.D_est(time, theta, c).x[0]
+    def get_D(self, t, theta, c):
+        return self.D_est(t, theta, c).x[0]
     # Objective vs D plot
-    def obj_func_plot(self, time, theta, c):
+    def obj_func_plot(self, t, theta, c):
         D = np.linspace(0,10,101)
-        obj = [obj_function(i, theta, self.dos_sol, time, c) for i in D]
+        obj = [obj_function(i, theta, self.dos_sol, t, c) for i in D]
         plt.plot(D, obj)
         plt.show()
 
@@ -187,7 +198,6 @@ class Exponential:
     
 
 #################################################################################################################################################################
-
 
 class Mendelsohn:
     def __init__(self, noise, V0, a, b, c):
@@ -331,7 +341,7 @@ class Mendelsohn:
         return self.num_sol_sys(P0, T, V0).y[1][-1] + 2*(self.num_sol_sys(P0, T, V0).y[0][-1])
     # Not a scalar (Root Result)
     def find_p0(self, T, V0):
-        return root_scalar(self.res_bc, x0 = -41, x1 = -10, args=(T, V0), maxiter=5000)
+        return root_scalar(self.res_bc, x0 = -10, x1 = -10, args=(T, V0), maxiter=5000)
     def get_p0(self, T, V0):
         return self.find_p0(T, V0).root
     def plot_res(self, T, V0):
@@ -377,8 +387,6 @@ class Mendelsohn:
 
 
 #################################################################################################################################################################
-
-
 
 class Logistic:
     def __init__(self, noise, V0, r, k, c):
@@ -534,12 +542,7 @@ class Logistic:
         plt.show()
 
 
-    
-
-
 #################################################################################################################################################################
-
-
 
 class Gompertz:
     def __init__(self, noise):
@@ -696,8 +699,6 @@ class Gompertz:
 
 #################################################################################################################################################################
 
-
-
 class Bertalanffy:
     def __init__(self, noise, V0, b, d, c):
         self.noise = noise
@@ -850,42 +851,197 @@ class Bertalanffy:
         plt.show()  
 
 
-
-
 #################################################################################################################################################################
 
+### RESULTS ###
 
-log = Logistic(0.05, 5, 1, 10, 10)
-exp = Exponential(0.05)
-mend = Mendelsohn(0.05, 5, 2, 3, 1)
-gomp = Gompertz(0.05)
-bert = Bertalanffy(0.05, 1, 2, 1, 1)
+# Exponential Models with noise = 0.05, V0 = 0.01 and varying a
+exp1 = Exponential(0.05, 0.01, 1)
+exp2 = Exponential(0.05, 0.01, 2)
+exp3 = Exponential(0.05, 0.01, 5)
+exp4 = Exponential(0.05, 0.01, 10)
+exp5 = Exponential(0.05, 0.01, 20)
 
-'''
-log.obj_func_plot(t_eval, [1, 5, 10], 1)
-exp.obj_func_plot(t_eval, [1, 1], 1)
-mend.obj_func_plot(t_eval, [1, 1, 2], 1)
-gomp.obj_func_plot(t_eval, [1, 5, 10], 1)
-bert.obj_func_plot(t_eval, [1, 5, 5], 1)
-'''
-'''
-print(log.num_sol_opt(10))
-print(log.get_p(10))
-plt.plot(np.linspace(0, 10, len(log.get_v(10))), log.get_v(10))
-plt.show()
-print(log.num_sol_opt(10))
-print(log.get_v(10))
-print(log.get_p(10))
+# Exponential Models with noise = 0.05, V0 = 1 and varying a
+exp6 = Exponential(0.05, 1, 1)
+exp7 = Exponential(0.05, 1, 2)
+exp8 = Exponential(0.05, 1, 5)
+exp9 = Exponential(0.05, 1, 10)
+exp10 = Exponential(0.05, 1, 20)
+
+# Exponential Models with noise = 0.05, V0 = 10 and varying a
+exp11 = Exponential(0.05, 10, 1)
+exp12 = Exponential(0.05, 10, 2)
+exp13 = Exponential(0.05, 10, 5)
+exp14 = Exponential(0.05, 10, 10)
+exp15 = Exponential(0.05, 10, 20)
+
+# Table: noise = 0.05
+# Create data
+data1 = [[exp1.V0, exp1.a, exp1.exp_CI([0.01,1], 0.95, "V0"), exp1.exp_CI([0.01,1], 0.99, "V0")],
+        [exp2.V0, exp2.a, exp2.exp_CI([0.01,2], 0.95, "V0"), exp2.exp_CI([0.01,2], 0.99, "V0")],
+        [exp3.V0, exp3.a, exp3.exp_CI([0.01,5], 0.95, "V0"), exp3.exp_CI([0.01,5], 0.99, "V0")],
+        [exp4.V0, exp4.a, exp4.exp_CI([0.01,10], 0.95, "V0"), exp4.exp_CI([0.01,10], 0.99, "V0")],
+        [exp5.V0, exp5.a, exp5.exp_CI([0.01,20], 0.95, "V0"), exp5.exp_CI([0.01,20], 0.99, "V0")]
+        ]
+data2 = [[exp1.V0, exp1.a, exp1.exp_CI([0.01,1], 0.95, "a"), exp1.exp_CI([0.01,1], 0.99, "a")],
+        [exp2.V0, exp2.a, exp2.exp_CI([0.01,2], 0.95, "a"), exp2.exp_CI([0.01,2], 0.99, "a")],
+        [exp3.V0, exp3.a, exp3.exp_CI([0.01,5], 0.95, "a"), exp3.exp_CI([0.01,5], 0.99, "a")],
+        [exp4.V0, exp4.a, exp4.exp_CI([0.01,10], 0.95, "a"), exp4.exp_CI([0.01,10], 0.99, "a")],
+        [exp5.V0, exp5.a, exp5.exp_CI([0.01,20], 0.95, "a"), exp5.exp_CI([0.01,20], 0.99, "a")]
+        ]
+data3 = [[exp6.V0, exp6.a, exp6.exp_CI([1,1], 0.95, "V0"), exp6.exp_CI([1,1], 0.99, "V0")],
+        [exp7.V0, exp7.a, exp7.exp_CI([1,2], 0.95, "V0"), exp7.exp_CI([1,2], 0.99, "V0")],
+        [exp8.V0, exp8.a, exp8.exp_CI([1,5], 0.95, "V0"), exp8.exp_CI([1,5], 0.99, "V0")],
+        [exp9.V0, exp9.a, exp9.exp_CI([1,10], 0.95, "V0"), exp9.exp_CI([1,10], 0.99, "V0")],
+        [exp10.V0, exp10.a, exp10.exp_CI([1,20], 0.95, "V0"), exp10.exp_CI([1,20], 0.99, "V0")]
+        ]
+data4 = [[exp6.V0, exp6.a, exp6.exp_CI([1,1], 0.95, "a"), exp6.exp_CI([1,1], 0.99, "a")],
+        [exp7.V0, exp7.a, exp7.exp_CI([1,2], 0.95, "a"), exp7.exp_CI([1,2], 0.99, "a")],
+        [exp8.V0, exp8.a, exp8.exp_CI([1,5], 0.95, "a"), exp8.exp_CI([1,5], 0.99, "a")],
+        [exp9.V0, exp9.a, exp9.exp_CI([1,10], 0.95, "a"), exp9.exp_CI([1,10], 0.99, "a")],
+        [exp10.V0, exp10.a, exp10.exp_CI([1,20], 0.95, "a"), exp10.exp_CI([1,20], 0.99, "a")]
+        ]
+# Define header names
+col_names1 = ["V0", "a", "95% Confidence Interval for V0", "99% Confidence Interval for V0"]
+col_names2 = ["V0", "a", "95% Confidence Interval for a", "99% Confidence Interval for a"]
+
+#print(tabulate(data1, headers=col_names1, tablefmt="latex"))
+#print(tabulate(data2, headers=col_names2, tablefmt="latex"))
+# print(tabulate(data3, headers=col_names1, tablefmt="latex"))
+# print(tabulate(data4, headers=col_names2, tablefmt="latex"))
 
 
-print(gomp.find_coeff(1, 1, 10, 1, 5))
-print(gomp.find_other_coeff(1, 1, 10, 1, 5))
-#print(gomp.opt_d(1, 1, 10, 10000, 5))
-print(gomp.opt_sol(1, 1, 10, 1, 5))
-print(4*np.log(1/10) - 4*gomp.find_coeff(1, 1, 10, 1, 5))
-print(gomp.co_state(1, 1, 10, 1, 5))
-gomp.plot_sol(1, 1, 10, 10000, 5)
-'''
+# Exponential Models with noise = 0.2, V0 = 0.01 and varying a
+exp1 = Exponential(0.2, 0.01, 1)
+exp2 = Exponential(0.2, 0.01, 2)
+exp3 = Exponential(0.2, 0.01, 5)
+exp4 = Exponential(0.2, 0.01, 10)
+exp5 = Exponential(0.2, 0.01, 20)
+
+# Exponential Models with noise = 0.2, V0 = 1 and varying a
+exp6 = Exponential(0.2, 1, 1)
+exp7 = Exponential(0.2, 1, 2)
+exp8 = Exponential(0.2, 1, 5)
+exp9 = Exponential(0.2, 1, 10)
+exp10 = Exponential(0.2, 1, 20)
+
+# Exponential Models with noise = 0.2, V0 = 10 and varying a
+exp11 = Exponential(0.2, 10, 1)
+exp12 = Exponential(0.2, 10, 2)
+exp13 = Exponential(0.2, 10, 5)
+exp14 = Exponential(0.2, 10, 10)
+exp15 = Exponential(0.2, 10, 20)
+
+# Table: noise = 0.2
+# Create data
+data1 = [[exp1.V0, exp1.a, exp1.exp_CI([0.01,1], 0.95, "V0"), exp1.exp_CI([0.01,1], 0.99, "V0")],
+        [exp2.V0, exp2.a, exp2.exp_CI([0.01,2], 0.95, "V0"), exp2.exp_CI([0.01,2], 0.99, "V0")],
+        [exp3.V0, exp3.a, exp3.exp_CI([0.01,5], 0.95, "V0"), exp3.exp_CI([0.01,5], 0.99, "V0")],
+        [exp4.V0, exp4.a, exp4.exp_CI([0.01,10], 0.95, "V0"), exp4.exp_CI([0.01,10], 0.99, "V0")],
+        [exp5.V0, exp5.a, exp5.exp_CI([0.01,20], 0.95, "V0"), exp5.exp_CI([0.01,20], 0.99, "V0")]
+        ]
+
+data2 = [[exp1.V0, exp1.a, exp1.exp_CI([0.01,1], 0.95, "a"), exp1.exp_CI([0.01,1], 0.99, "a")],
+        [exp2.V0, exp2.a, exp2.exp_CI([0.01,2], 0.95, "a"), exp2.exp_CI([0.01,2], 0.99, "a")],
+        [exp3.V0, exp3.a, exp3.exp_CI([0.01,5], 0.95, "a"), exp3.exp_CI([0.01,5], 0.99, "a")],
+        [exp4.V0, exp4.a, exp4.exp_CI([0.01,10], 0.95, "a"), exp4.exp_CI([0.01,10], 0.99, "a")],
+        [exp5.V0, exp5.a, exp5.exp_CI([0.01,20], 0.95, "a"), exp5.exp_CI([0.01,20], 0.99, "a")]
+        ]
+data3 = [[exp6.V0, exp6.a, exp6.exp_CI([1,1], 0.95, "V0"), exp6.exp_CI([1,1], 0.99, "V0")],
+        [exp7.V0, exp7.a, exp7.exp_CI([1,2], 0.95, "V0"), exp7.exp_CI([1,2], 0.99, "V0")],
+        [exp8.V0, exp8.a, exp8.exp_CI([1,5], 0.95, "V0"), exp8.exp_CI([1,5], 0.99, "V0")],
+        [exp9.V0, exp9.a, exp9.exp_CI([1,10], 0.95, "V0"), exp9.exp_CI([1,10], 0.99, "V0")],
+        [exp10.V0, exp10.a, exp10.exp_CI([1,20], 0.95, "V0"), exp10.exp_CI([1,20], 0.99, "V0")]
+        ]
+data4 = [[exp6.V0, exp6.a, exp6.exp_CI([1,1], 0.95, "a"), exp6.exp_CI([1,1], 0.99, "a")],
+        [exp7.V0, exp7.a, exp7.exp_CI([1,2], 0.95, "a"), exp7.exp_CI([1,2], 0.99, "a")],
+        [exp8.V0, exp8.a, exp8.exp_CI([1,5], 0.95, "a"), exp8.exp_CI([1,5], 0.99, "a")],
+        [exp9.V0, exp9.a, exp9.exp_CI([1,10], 0.95, "a"), exp9.exp_CI([1,10], 0.99, "a")],
+        [exp10.V0, exp10.a, exp10.exp_CI([1,20], 0.95, "a"), exp10.exp_CI([1,20], 0.99, "a")]
+        ]
+# Define header names
+col_names1 = ["V0", "a", "95% Confidence Interval for V0", "99% Confidence Interval for V0"]
+col_names2 = ["V0", "a", "95% Confidence Interval for a", "99% Confidence Interval for a"]
+
+# print(tabulate(data1, headers=col_names1, tablefmt="latex"))
+# print(tabulate(data2, headers=col_names2, tablefmt="latex"))
+print(tabulate(data3, headers=col_names1, tablefmt="latex"))
+print(tabulate(data4, headers=col_names2, tablefmt="latex"))
+
+# Exponential Models with noise = 0.5, V0 = 0.01 and varying a
+exp1 = Exponential(0.5, 0.01, 1)
+exp2 = Exponential(0.5, 0.01, 2)
+exp3 = Exponential(0.5, 0.01, 5)
+exp4 = Exponential(0.5, 0.01, 10)
+exp5 = Exponential(0.5, 0.01, 20)
+
+# Exponential Models with noise = 0.5, V0 = 1 and varying a
+exp6 = Exponential(0.5, 1, 1)
+exp7 = Exponential(0.5, 1, 2)
+exp8 = Exponential(0.5, 1, 5)
+exp9 = Exponential(0.5, 1, 10)
+exp10 = Exponential(0.5, 1, 20)
+
+# Exponential Models with noise = 0.5, V0 = 10 and varying a
+exp11 = Exponential(0.5, 10, 1)
+exp12 = Exponential(0.5, 10, 2)
+exp13 = Exponential(0.5, 10, 5)
+exp14 = Exponential(0.5, 10, 10)
+exp15 = Exponential(0.5, 10, 20)
+
+# Table: noise = 0.5
+# Create data
+data1 = [[exp1.V0, exp1.a, exp1.exp_CI([0.01,1], 0.95, "V0"), exp1.exp_CI([0.01,1], 0.99, "V0")],
+        [exp2.V0, exp2.a, exp2.exp_CI([0.01,2], 0.95, "V0"), exp2.exp_CI([0.01,2], 0.99, "V0")],
+        [exp3.V0, exp3.a, exp3.exp_CI([0.01,5], 0.95, "V0"), exp3.exp_CI([0.01,5], 0.99, "V0")],
+        [exp4.V0, exp4.a, exp4.exp_CI([0.01,10], 0.95, "V0"), exp4.exp_CI([0.01,10], 0.99, "V0")],
+        [exp5.V0, exp5.a, exp5.exp_CI([0.01,20], 0.95, "V0"), exp5.exp_CI([0.01,20], 0.99, "V0")]
+        ]
+
+data2 = [[exp1.V0, exp1.a, exp1.exp_CI([0.01,1], 0.95, "a"), exp1.exp_CI([0.01,1], 0.99, "a")],
+        [exp2.V0, exp2.a, exp2.exp_CI([0.01,2], 0.95, "a"), exp2.exp_CI([0.01,2], 0.99, "a")],
+        [exp3.V0, exp3.a, exp3.exp_CI([0.01,5], 0.95, "a"), exp3.exp_CI([0.01,5], 0.99, "a")],
+        [exp4.V0, exp4.a, exp4.exp_CI([0.01,10], 0.95, "a"), exp4.exp_CI([0.01,10], 0.99, "a")],
+        [exp5.V0, exp5.a, exp5.exp_CI([0.01,20], 0.95, "a"), exp5.exp_CI([0.01,20], 0.99, "a")]
+        ]
+# Define header names
+col_names1 = ["V0", "a", "95% Confidence Interval for V0", "99% Confidence Interval for V0"]
+col_names2 = ["V0", "a", "95% Confidence Interval for a", "99% Confidence Interval for a"]
+
+# print(tabulate(data1, headers=col_names1, tablefmt="latex"))
+# print(tabulate(data2, headers=col_names2, tablefmt="latex"))
+
+
+# mend = Mendelsohn(0.05, 5, 2, 1/2, 1)
+# log = Logistic(0.05, 5, 1, 10, 10)
+# gomp = Gompertz(0.05)
+# bert = Bertalanffy(0.05, 1, 2, 1, 1)
+
+
+# log.obj_func_plot(t_eval, [1, 5, 10], 1)
+# exp.obj_func_plot(t_eval, [1, 1], 1)
+# mend.obj_func_plot(t_eval, [1, 1, 2], 1)
+# gomp.obj_func_plot(t_eval, [1, 5, 10], 1)
+# bert.obj_func_plot(t_eval, [1, 5, 5], 1)
+
+# print(log.num_sol_opt(10))
+# print(log.get_p(10))
+# plt.plot(np.linspace(0, 10, len(log.get_v(10))), log.get_v(10))
+# plt.show()
+# print(log.num_sol_opt(10))
+# print(log.get_v(10))
+# print(log.get_p(10))
+
+
+# print(gomp.find_coeff(1, 1, 10, 1, 5))
+# print(gomp.find_other_coeff(1, 1, 10, 1, 5))
+# #print(gomp.opt_d(1, 1, 10, 10000, 5))
+# print(gomp.opt_sol(1, 1, 10, 1, 5))
+# print(4*np.log(1/10) - 4*gomp.find_coeff(1, 1, 10, 1, 5))
+# print(gomp.co_state(1, 1, 10, 1, 5))
+# gomp.plot_sol(1, 1, 10, 10000, 5)
+
 
 
 # print(log.num_sol_sys(10, 1, -1).y)
@@ -923,9 +1079,18 @@ gomp.plot_sol(1, 1, 10, 10000, 5)
 # gomp.plot_D(1, 5, 20, 10, 0.000001)
 #print([np.real(gomp.p(i, 1, 5, 20, 10, 0.001)) for i in np.linspace(0, 10, 101)])
 # print(mend.res_bc(-0.001,10,2))
-mend.plot_res(10, 5)
-mend.plot_v_d(10, 5)
-print(mend.num_sol_sys(-40, 10, 5))
+# mend.plot_res(10, 5)
+# mend.plot_v_d(10, 5)
+# print(mend.num_sol_sys(-40, 10, 5))
+
+
+
+# y=[-exp.exp_mle([1,3]).fun - exp.log_l([exp.exp_mle([1,3]).x[0], a], exp.noise) - chi2.ppf(0.95, 1)/2 for a in np.linspace(2.9, 3.1, 1001)]
+# plt.plot(np.linspace(2.9, 3.1, 1001), y)
+# plt.show()
+
+
+
 #################################################################################################################################################################
 
 
