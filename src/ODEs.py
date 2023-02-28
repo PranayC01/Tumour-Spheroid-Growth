@@ -394,7 +394,7 @@ class Mendelsohn:
 class Logistic:
     def __init__(self, noise, V0, r, k, c):
         self.noise = noise
-        self.data = self.log_sol_noise()
+        self.data = self.log_sol_noise([V0, r, k])
         self.V0 = V0
         self.r = r
         self.k = k
@@ -411,49 +411,52 @@ class Logistic:
     def log_num_sol(self, theta): 
         return solve_ivp(self.ode, [0, 10], [theta[0]], args = (theta[1], theta[2]), t_eval = np.linspace(0, 10, 101))
     # Solution with noise
-    def log_sol_noise(self):
-        return self.log_sol([0.01, 1, 10], t_eval) * (1 + self.noise * np.random.normal(0,1,101))
+    def log_sol_noise(self, theta):
+        np.random.seed(1)
+        X = np.random.normal(0, 1, 1001)
+        return self.log_sol(theta, t_eval) * (1 + self.noise * X)
 
-    # Residuals
-    def log_res(self, theta):
-        return self.log_sol(theta, t_eval) - self.data
-    # Set Least Squares estimates
-    def l_squares(self):
-        theta0 = [0.01, 1, 10]
-        return least_squares(self.log_res, theta0)
-    # Get Least Squares estimates
-    def get_l_s(self):
-        print(self.l_squares().x)
+    # Log-likelihood for Logistic Model
+    def log_l(self, theta, noise):
+        n=1001
+        g = self.log_sol(theta, np.linspace(0, 10, n))
+        log_l = -(n/2)*np.log((noise**2)*(2*np.pi)) -n/(2*noise**2) - (1/(2*noise**2))*np.sum(np.square(self.data)/np.square(g) - 2*self.data/g) - np.sum(np.log(g))
+        return log_l
+    
+    # Negative Log-Likelihood
+    def neg_log_l(self, theta, noise):
+        return -self.log_l(theta, noise)
     
     # Set MLE estimates
-    def log_mle(self): 
-        return minimize(neg_log_l, [0.01, 1, 10], method = 'Nelder-Mead', args=(self.log_num_sol, self.data, self.noise))
+    def log_mle(self, guess): 
+        return minimize(self.neg_log_l, guess, method = 'Nelder-Mead', args=(self.noise))
     # Get MLE estimates
-    def get_mle(self):
-        print(self.log_mle().x)
+    def get_mle(self, guess):
+        return self.log_mle(guess).x
 
     # Set PL CI
-    def log_CI(self, confidence, param):
+    def log_CI(self, guess, confidence, param):
         df = 1
+        mle = self.log_mle(guess)
         if param == "r":
             def test(r):
-                return -self.log_mle().fun - log_l([self.log_mle().x[0], r, self.log_mle().x[2]], self.log_num_sol, self.data, self.noise) - chi2.ppf(confidence, df)/2
-            root1 = root_scalar(test, x0 = 0.5*self.log_mle().x[1], x1 = 0.9*self.log_mle().x[1])
-            root2 = root_scalar(test, x0 = 1.5*self.log_mle().x[1], x1 = 1.1*self.log_mle().x[1])
+                return -mle.fun - self.log_l([mle.x[0], r, mle.x[2]], self.noise) - chi2.ppf(confidence, df)/2
+            root1 = root_scalar(test, x0 = 0.75*mle.x[1], x1 = 0.9*mle.x[1])
+            root2 = root_scalar(test, x0 = 1.25*mle.x[1], x1 = 1.1*mle.x[1])
             CI = [min(root1.root, root2.root), max(root1.root, root2.root)]
             return CI
-        elif param == "K":
+        elif param == "K" or "k":
             def test(K):
-                return -self.log_mle().fun - log_l([self.log_mle().x[0], self.log_mle().x[1], K], self.log_num_sol, self.data, self.noise) - chi2.ppf(confidence, df)/2
-            root1 = root_scalar(test, x0 = 0.5*self.log_mle().x[2], x1 = 0.9*self.log_mle().x[2])
-            root2 = root_scalar(test, x0 = 1.5*self.log_mle().x[2], x1 = 1.1*self.log_mle().x[2])
+                return -mle.fun - self.log_l([mle.x[0], mle.x[1], K], self.noise) - chi2.ppf(confidence, df)/2
+            root1 = root_scalar(test, x0 = 0.5*mle.x[2], x1 = 0.9*mle.x[2])
+            root2 = root_scalar(test, x0 = 1.5*mle.x[2], x1 = 1.1*mle.x[2])
             CI = [min(root1.root, root2.root), max(root1.root, root2.root)]
             return CI
         elif param == "V0":
             def test(V0):
-                return -self.log_mle().fun - log_l([V0, self.log_mle().x[1], self.log_mle().x[2]], self.log_num_sol, self.data, self.noise) - chi2.ppf(confidence, df)/2
-            root1 = root_scalar(test, x0 = 0.5*self.log_mle().x[0], x1 = 0.9*self.log_mle().x[0])
-            root2 = root_scalar(test, x0 = 1.5*self.log_mle().x[0], x1 = 1.1*self.log_mle().x[0])
+                return -mle.fun - self.log_l([V0, mle.x[1], mle.x[2]], self.noise) - chi2.ppf(confidence, df)/2
+            root1 = root_scalar(test, x0 = 0.5*mle.x[0], x1 = 0.9*mle.x[0])
+            root2 = root_scalar(test, x0 = 1.5*mle.x[0], x1 = 1.1*mle.x[0])
             CI = [min(root1.root, root2.root), max(root1.root, root2.root)]
             return CI
         else:
@@ -548,9 +551,12 @@ class Logistic:
 #################################################################################################################################################################
 
 class Gompertz:
-    def __init__(self, noise):
+    def __init__(self, noise, V0, r, k):
         self.noise = noise
-        self.data = self.gomp_sol_noise()
+        self.data = self.gomp_sol_noise([V0, r, k])
+        self.V0 = V0
+        self.r = r
+        self.k = k
     
     # ODE
     def ode(self, t, v, r, k):
@@ -562,49 +568,52 @@ class Gompertz:
     def gomp_num_sol(self, theta): 
         return solve_ivp(self.ode, [0, 10], [theta[0]], args = (theta[1], theta[2]), t_eval = np.linspace(0, 10, 101))
     # Solution with noise
-    def gomp_sol_noise(self):
-        return self.gomp_sol([0.01, 1, 10], t_eval) * (1 + self.noise * np.random.normal(0,1,101))
+    def gomp_sol_noise(self, theta):
+        np.random.seed(1)
+        X = np.random.normal(0, 1, 1001)
+        return self.gomp_sol(theta, t_eval) * (1 + self.noise * X)
 
-    # Residuals
-    def gomp_res(self, theta):
-        return self.gomp_sol(theta, t_eval) - self.data
-    # Set Least Squares estimates
-    def l_squares(self):
-        theta0 = [0.01, 1, 10]
-        return least_squares(self.gomp_res, theta0)
-    # Get Least Squares estimates
-    def get_l_s(self):
-        print(self.l_squares().x)
+    # Log-likelihood for Gompertz Model
+    def log_l(self, theta, noise):
+        n=1001
+        g = self.gomp_sol(theta, np.linspace(0, 10, n))
+        log_l = -(n/2)*np.log((noise**2)*(2*np.pi)) -n/(2*noise**2) - (1/(2*noise**2))*np.sum(np.square(self.data)/np.square(g) - 2*self.data/g) - np.sum(np.log(g))
+        return log_l
+    
+    # Negative Log-Likelihood
+    def neg_log_l(self, theta, noise):
+        return -self.log_l(theta, noise)
     
     # Set MLE estimates
-    def gomp_mle(self):
-        return minimize(neg_log_l, [0.01, 1, 10], method = 'Nelder-Mead', args=(self.gomp_num_sol, self.data, self.noise))
+    def gomp_mle(self, guess):
+        return minimize(self.neg_log_l, guess, method = 'Nelder-Mead', args=(self.noise))
     # Get MLE estimates
-    def get_mle(self):
-        print(self.gomp_mle().x)
+    def get_mle(self, guess):
+        return self.gomp_mle(guess).x
 
     # Set PL CI
-    def gomp_CI(self, confidence, param):
+    def gomp_CI(self, guess, confidence, param):
         df = 1
+        mle = self.gomp_mle(guess)
         if param == "r":
             def test(r):
-                return -self.gomp_mle().fun - log_l([self.gomp_mle().x[0], r, self.gomp_mle().x[2]], self.gomp_num_sol, self.data, self.noise) - chi2.ppf(confidence, df)/2
-            root1 = root_scalar(test, x0 = 0.5*self.gomp_mle().x[1], x1 = 0.9*self.gomp_mle().x[1])
-            root2 = root_scalar(test, x0 = 1.5*self.gomp_mle().x[1], x1 = 1.1*self.gomp_mle().x[1])
+                return -mle.fun - self.log_l([mle.x[0], r, mle.x[2]], self.noise) - chi2.ppf(confidence, df)/2
+            root1 = root_scalar(test, x0 = 0.5*mle.x[1], x1 = 0.9*mle.x[1])
+            root2 = root_scalar(test, x0 = 1.5*mle.x[1], x1 = 1.1*mle.x[1])
             CI = [min(root1.root, root2.root), max(root1.root, root2.root)]
             return CI
-        elif param == "K":
+        elif param == "K" or "k":
             def test(K):
-                return -self.gomp_mle().fun - log_l([self.gomp_mle().x[0], self.gomp_mle().x[1], K], self.gomp_num_sol, self.data, self.noise) - chi2.ppf(confidence, df)/2
-            root1 = root_scalar(test, x0 = 0.5*self.gomp_mle().x[2], x1 = 0.9*self.gomp_mle().x[2])
-            root2 = root_scalar(test, x0 = 1.5*self.gomp_mle().x[2], x1 = 1.1*self.gomp_mle().x[2])
+                return -mle.fun - self.log_l([mle.x[0], mle.x[1], K], self.noise) - chi2.ppf(confidence, df)/2
+            root1 = root_scalar(test, x0 = 0.5*mle.x[2], x1 = 0.9*mle.x[2])
+            root2 = root_scalar(test, x0 = 1.5*mle.x[2], x1 = 1.1*mle.x[2])
             CI = [min(root1.root, root2.root), max(root1.root, root2.root)]
             return CI
         elif param == "V0":
             def test(V0):
-                return -self.gomp_mle().fun - log_l([V0, self.gomp_mle().x[1], self.gomp_mle().x[2]], self.gomp_num_sol, self.data, self.noise) - chi2.ppf(confidence, df)/2
-            root1 = root_scalar(test, x0 = 0.5*self.gomp_mle().x[0], x1 = 0.9*self.gomp_mle().x[0])
-            root2 = root_scalar(test, x0 = 1.5*self.gomp_mle().x[0], x1 = 1.1*self.gomp_mle().x[0])
+                return -mle.fun - self.log_l([V0, mle.x[1], mle.x[2]], self.noise) - chi2.ppf(confidence, df)/2
+            root1 = root_scalar(test, x0 = 0.5*mle.x[0], x1 = 0.9*mle.x[0])
+            root2 = root_scalar(test, x0 = 1.5*mle.x[0], x1 = 1.1*mle.x[0])
             CI = [min(root1.root, root2.root), max(root1.root, root2.root)]
             return CI
         else:
@@ -705,7 +714,7 @@ class Gompertz:
 class Bertalanffy:
     def __init__(self, noise, V0, b, d, c):
         self.noise = noise
-        self.data = self.bert_sol_noise()
+        self.data = self.bert_sol_noise([V0, b, d])
         self.V0 = V0
         self.b = b
         self.d = d
@@ -721,49 +730,52 @@ class Bertalanffy:
     def bert_num_sol(self, theta):
         return solve_ivp(self.ode, [0, 10], [theta[0]], args = (theta[1], theta[2]), t_eval = np.linspace(0, 10, 101))
     # Solution with noise
-    def bert_sol_noise(self):
-        return self.bert_sol([0.01, 1, 1], t_eval) * (1 + self.noise * np.random.normal(0,1,101))
+    def bert_sol_noise(self, theta):
+        np.random.seed(1)
+        X = np.random.normal(0, 1, 1001)
+        return self.bert_sol(theta, t_eval) * (1 + self.noise * X)
 
-    # Residuals
-    def bert_res(self, theta):
-        return self.bert_sol(theta, t_eval) - self.data
-    # Set Least Squares estimates
-    def l_squares(self):
-        theta0 = [0.01, 1, 1]
-        return least_squares(self.bert_res, theta0)
-    # Get Least Squares estimates
-    def get_l_s(self):
-        print(self.l_squares().x)
+    # Log-likelihood for Bertalanffy Model
+    def log_l(self, theta, noise):
+        n=1001
+        g = self.bert_sol(theta, np.linspace(0, 10, n))
+        log_l = -(n/2)*np.log((noise**2)*(2*np.pi)) -n/(2*noise**2) - (1/(2*noise**2))*np.sum(np.square(self.data)/np.square(g) - 2*self.data/g) - np.sum(np.log(g))
+        return log_l
+    
+    # Negative Log-Likelihood
+    def neg_log_l(self, theta, noise):
+        return -self.log_l(theta, noise)
     
     # Set MLE estimates
-    def bert_mle(self):
-        return minimize(neg_log_l, [0.01, 1, 1], method = 'Nelder-Mead', args=(self.bert_num_sol, self.data, self.noise))
+    def bert_mle(self, guess):
+        return minimize(self.neg_log_l, guess, method = 'Nelder-Mead', args=(self.noise))
     # Get MLE estimates
-    def get_mle(self):
-        print(self.bert_mle().x)
+    def get_mle(self, guess):
+        return self.bert_mle(guess).x
 
     # Set PL CI
-    def bert_CI(self, confidence, param):
+    def bert_CI(self, guess, confidence, param):
         df = 1
+        mle = self.bert_mle(guess)
         if param == "b":
             def test(b):
-                return -self.bert_mle().fun - log_l([self.bert_mle().x[0], b, self.bert_mle().x[2]], self.bert_num_sol, self.data, self.noise) - chi2.ppf(confidence, df)/2
-            root1 = root_scalar(test, x0 = 0.5*self.bert_mle().x[1], x1 = 0.9*self.bert_mle().x[1])
-            root2 = root_scalar(test, x0 = 1.5*self.bert_mle().x[1], x1 = 1.1*self.bert_mle().x[1])
+                return -mle.fun - self.log_l([mle.x[0], b, mle.x[2]], self.noise) - chi2.ppf(confidence, df)/2
+            root1 = root_scalar(test, x0 = 0.5*mle.x[1], x1 = 0.9*mle.x[1])
+            root2 = root_scalar(test, x0 = 1.5*mle.x[1], x1 = 1.1*mle.x[1])
             CI = [min(root1.root, root2.root), max(root1.root, root2.root)]
             return CI
         elif param == "d":
             def test(d):
-                return -self.bert_mle().fun - log_l([self.bert_mle().x[0], self.bert_mle().x[1], d], self.bert_num_sol, self.data, self.noise) - chi2.ppf(confidence, df)/2
-            root1 = root_scalar(test, x0 = 0.5*self.bert_mle().x[2], x1 = 0.9*self.bert_mle().x[2])
-            root2 = root_scalar(test, x0 = 1.5*self.bert_mle().x[2], x1 = 1.1*self.bert_mle().x[2])
+                return -mle.fun - self.log_l([mle.x[0], mle.x[1], d], self.noise) - chi2.ppf(confidence, df)/2
+            root1 = root_scalar(test, x0 = 0.5*mle.x[2], x1 = 0.9*mle.x[2])
+            root2 = root_scalar(test, x0 = 1.5*mle.x[2], x1 = 1.1*mle.x[2])
             CI = [min(root1.root, root2.root), max(root1.root, root2.root)]
             return CI
         elif param == "V0":
             def test(V0):
-                return -self.bert_mle().fun - log_l([V0, self.bert_mle().x[1], self.bert_mle().x[2]], self.bert_num_sol, self.data, self.noise) - chi2.ppf(confidence, df)/2
-            root1 = root_scalar(test, x0 = 0.5*self.bert_mle().x[0], x1 = 0.9*self.bert_mle().x[0])
-            root2 = root_scalar(test, x0 = 1.5*self.bert_mle().x[0], x1 = 1.1*self.bert_mle().x[0])
+                return -mle.fun - self.log_l([V0, mle.x[1], mle.x[2]], self.noise) - chi2.ppf(confidence, df)/2
+            root1 = root_scalar(test, x0 = 0.5*mle.x[0], x1 = 0.9*mle.x[0])
+            root2 = root_scalar(test, x0 = 1.5*mle.x[0], x1 = 1.1*mle.x[0])
             CI = [min(root1.root, root2.root), max(root1.root, root2.root)]
             return CI
         else:
@@ -1027,6 +1039,26 @@ col_names2 = ["V0", "a", "95% Confidence Interval for a", "99% Confidence Interv
 # print(tabulate(data3, headers=col_names1, tablefmt="latex"))
 # print(tabulate(data4, headers=col_names2, tablefmt="latex"))
 
+# Exponential model with varying noise
+exp1 = Exponential(0.05, 1, 1)
+exp2 = Exponential(0.2, 1, 1)
+exp3 = Exponential(0.5, 1, 1)
+exp4 = Exponential(1, 1, 1)
+
+# Exponential MLE results
+data1 = [[exp1.V0, exp1.a, exp1.noise, exp1.get_mle([1,1])[0], exp1.get_mle([1,1])[1]],
+         [exp2.V0, exp2.a, exp2.noise, exp2.get_mle([1,1])[0], exp2.get_mle([1,1])[1]],
+         [exp3.V0, exp3.a, exp3.noise, exp3.get_mle([1,1])[0], exp3.get_mle([1,1])[1]],
+         [exp4.V0, exp4.a, exp4.noise, exp4.get_mle([1,1])[0], exp4.get_mle([1,1])[1]]
+         ]
+
+col_names1 = ["V0", "a", "\u03C3", "MLE for V0", "MLE for a"]
+
+# print(tabulate(data1, headers=col_names1, tablefmt="latex"))
+
+
+
+
 #######################################################################################################################################
 
 # Mendelsohn models with noise = 0.05 and varying b
@@ -1043,12 +1075,329 @@ data1 = [[mend1.V0, mend1.a, mend1.b, mend1.mend_CI([0.01, 1, 0.1], 0.95, "b"), 
 
 col_names1 = ["V0", "a", "b", "95% Confidence Interval for b", "99% Confidence Interval for b"]
 
+#print(tabulate(data1, headers=col_names1, tablefmt="latex"))
+
+# Mendelsohn models with noise = 0.2 and varying b
+mend5 = Mendelsohn(0.2, 0.01, 1, 0.1, 1)
+mend6 = Mendelsohn(0.2, 0.01, 1, 0.5, 1)
+mend7 = Mendelsohn(0.2, 0.01, 1, 2, 1)
+mend8 = Mendelsohn(0.2, 0.01, 1, 2.5, 1)
+
+data1 = [[mend5.V0, mend5.a, mend5.b, mend5.mend_CI([0.01, 1, 0.1], 0.95, "b"), mend5.mend_CI([0.01, 1, 0.1], 0.99, "b")],
+         [mend6.V0, mend6.a, mend6.b, mend6.mend_CI([0.01, 1, 0.5], 0.95, "b"), mend6.mend_CI([0.01, 1, 0.5], 0.99, "b")],
+         [mend7.V0, mend7.a, mend7.b, mend7.mend_CI([0.01, 1, 2], 0.95, "b"), mend7.mend_CI([0.01, 1, 2], 0.99, "b")],
+         [mend8.V0, mend8.a, mend8.b, mend8.mend_CI([0.01, 1, 2.5], 0.95, "b"), mend8.mend_CI([0.01, 1, 2.5], 0.99, "b")]
+         ]
+
+col_names1 = ["V0", "a", "b", "95% Confidence Interval for b", "99% Confidence Interval for b"]
+
+#print(tabulate(data1, headers=col_names1, tablefmt="latex"))
+
+# Mendelsohn models with noise = 0.2 and varying b
+mend9 = Mendelsohn(0.5, 0.01, 1, 0.1, 1)
+mend10 = Mendelsohn(0.5, 0.01, 1, 0.5, 1)
+mend11 = Mendelsohn(0.5, 0.01, 1, 2, 1)
+mend12 = Mendelsohn(0.5, 0.01, 1, 2.5, 1)
+
+data1 = [[mend9.V0, mend9.a, mend9.b, mend9.mend_CI([0.01, 1, 0.1], 0.95, "b"), mend9.mend_CI([0.01, 1, 0.1], 0.99, "b")],
+         [mend10.V0, mend10.a, mend10.b, mend10.mend_CI([0.01, 1, 0.5], 0.95, "b"), mend10.mend_CI([0.01, 1, 0.5], 0.99, "b")],
+         [mend11.V0, mend11.a, mend11.b, mend11.mend_CI([0.01, 1, 2], 0.95, "b"), mend11.mend_CI([0.01, 1, 2], 0.99, "b")],
+         [mend12.V0, mend12.a, mend12.b, mend12.mend_CI([0.01, 1, 2.5], 0.95, "b"), mend12.mend_CI([0.01, 1, 2.5], 0.99, "b")]
+         ]
+
+col_names1 = ["V0", "a", "b", "95% Confidence Interval for b", "99% Confidence Interval for b"]
+
+#print(tabulate(data1, headers=col_names1, tablefmt="latex"))
+
+# Mendelsohn model with varying noise
+mend1 = Mendelsohn(0.05, 1, 1, 0.5, 1)
+mend2 = Mendelsohn(0.2, 1, 1, 0.5, 1)
+mend3 = Mendelsohn(0.5, 1, 1, 0.5, 1)
+mend4 = Mendelsohn(1, 1, 1, 0.5, 1)
+
+# Mendelsohn MLE results
+data1 = [[mend1.V0, mend1.a, mend1.b, mend1.noise, mend1.get_mle([1,1,0.5])[0], mend1.get_mle([1,1,0.5])[1], mend1.get_mle([1,1,0.5])[2]],
+         [mend2.V0, mend2.a, mend2.b, mend2.noise, mend2.get_mle([1,1,0.5])[0], mend2.get_mle([1,1,0.5])[1], mend2.get_mle([1,1,0.5])[2]],
+         [mend3.V0, mend3.a, mend3.b, mend3.noise, mend3.get_mle([1,1,0.5])[0], mend3.get_mle([1,1,0.5])[1], mend3.get_mle([1,1,0.5])[2]],
+         [mend4.V0, mend4.a, mend4.b, mend4.noise, mend4.get_mle([1,1,0.5])[0], mend4.get_mle([1,1,0.5])[1], mend4.get_mle([1,1,0.5])[2]]
+         ]
+
+col_names1 = ["V0", "a", "b", "\u03C3", "MLE for V0", "MLE for a", "MLE for b"]
+
+# print(tabulate(data1, headers=col_names1, tablefmt="latex"))
+
+#######################################################################################################################################
+
+# Logistic models with noise = 0.05 and varying r (Low Initial Volume)
+log1 = Logistic(0.05, 0.01, 0.1, 10, 1)
+log2 = Logistic(0.05, 0.01, 0.5, 10, 1)
+log3 = Logistic(0.05, 0.01, 1, 10, 1)
+log4 = Logistic(0.05, 0.01, 5, 10, 1)
+log5 = Logistic(0.05, 0.01, 25, 10, 1)
+log6 = Logistic(0.05, 0.01, 100, 10, 1)
+
+data1 = [[log1.V0, log1.r, log1.k, log1.log_CI([0.01, 0.1, 10], 0.95, "r"), log1.log_CI([0.01, 0.1, 10], 0.99, "r")],
+         [log2.V0, log2.r, log2.k, log2.log_CI([0.01, 0.5, 10], 0.95, "r"), log2.log_CI([0.01, 0.5, 10], 0.99, "r")],
+         [log3.V0, log3.r, log3.k, log3.log_CI([0.01, 1, 10], 0.95, "r"), log3.log_CI([0.01, 1, 10], 0.99, "r")],
+         [log4.V0, log4.r, log4.k, log4.log_CI([0.01, 5, 10], 0.95, "r"), log4.log_CI([0.01, 5, 10], 0.99, "r")],
+         [log5.V0, log5.r, log5.k, log5.log_CI([0.01, 25, 10], 0.95, "r"), log5.log_CI([0.01, 25, 10], 0.99, "r")],
+         [log6.V0, log6.r, log6.k, log6.log_CI([0.01, 100, 10], 0.95, "r"), log6.log_CI([0.01, 100, 10], 0.99, "r")]
+         ]
+data2 = [[log1.V0, log1.r, log1.k, log1.log_CI([0.01, 0.1, 10], 0.95, "K"), log1.log_CI([0.01, 0.1, 10], 0.99, "K")],
+         [log2.V0, log2.r, log2.k, log2.log_CI([0.01, 0.5, 10], 0.95, "K"), log2.log_CI([0.01, 0.5, 10], 0.99, "K")],
+         [log3.V0, log3.r, log3.k, log3.log_CI([0.01, 1, 10], 0.95, "K"), log3.log_CI([0.01, 1, 10], 0.99, "K")],
+         [log4.V0, log4.r, log4.k, log4.log_CI([0.01, 5, 10], 0.95, "K"), log4.log_CI([0.01, 5, 10], 0.99, "K")],
+         [log5.V0, log5.r, log5.k, log5.log_CI([0.01, 25, 10], 0.95, "K"), log5.log_CI([0.01, 25, 10], 0.99, "K")],
+         [log6.V0, log6.r, log6.k, log6.log_CI([0.01, 100, 10], 0.95, "K"), log6.log_CI([0.01, 100, 10], 0.99, "K")]
+         ]
+
+col_names1 = ["V0", "r", "k", "95% Confidence Interval for r", "99% Confidence Interval for r"]
+col_names2 = ["V0", "r", "k", "95% Confidence Interval for k", "99% Confidence Interval for k"]
+
+#print(tabulate(data1, headers=col_names1, tablefmt="latex"))
+#print(tabulate(data2, headers=col_names2, tablefmt="latex"))
+
+
+# Logistic models with noise = 0.05 and varying k (Low Initial Volume)
+log1 = Logistic(0.05, 0.01, 1, 1, 1)
+log2 = Logistic(0.05, 0.01, 1, 5, 1)
+log3 = Logistic(0.05, 0.01, 1, 10, 1)
+log4 = Logistic(0.05, 0.01, 1, 25, 1)
+log5 = Logistic(0.05, 0.01, 1, 100, 1)
+log6 = Logistic(0.05, 0.01, 1, 1000, 1)
+
+data1 = [[log1.V0, log1.r, log1.k, log1.log_CI([0.01, 1, 1], 0.95, "r"), log1.log_CI([0.01, 1, 1], 0.99, "r")],
+         [log2.V0, log2.r, log2.k, log2.log_CI([0.01, 1, 5], 0.95, "r"), log2.log_CI([0.01, 1, 5], 0.99, "r")],
+         [log3.V0, log3.r, log3.k, log3.log_CI([0.01, 1, 10], 0.95, "r"), log3.log_CI([0.01, 1, 10], 0.99, "r")],
+         [log4.V0, log4.r, log4.k, log4.log_CI([0.01, 1, 25], 0.95, "r"), log4.log_CI([0.01, 1, 25], 0.99, "r")],
+         [log5.V0, log5.r, log5.k, log5.log_CI([0.01, 1, 100], 0.95, "r"), log5.log_CI([0.01, 1, 100], 0.99, "r")],
+         [log6.V0, log6.r, log6.k, log6.log_CI([0.01, 1, 1000], 0.95, "r"), log6.log_CI([0.01, 1, 1000], 0.99, "r")]
+         ]
+data2 = [[log1.V0, log1.r, log1.k, log1.log_CI([0.01, 1, 1], 0.95, "k"), log1.log_CI([0.01, 1, 1], 0.99, "k")],
+         [log2.V0, log2.r, log2.k, log2.log_CI([0.01, 1, 5], 0.95, "k"), log2.log_CI([0.01, 1, 5], 0.99, "k")],
+         [log3.V0, log3.r, log3.k, log3.log_CI([0.01, 1, 10], 0.95, "k"), log3.log_CI([0.01, 1, 10], 0.99, "k")],
+         [log4.V0, log4.r, log4.k, log4.log_CI([0.01, 1, 25], 0.95, "k"), log4.log_CI([0.01, 1, 25], 0.99, "k")],
+         [log5.V0, log5.r, log5.k, log5.log_CI([0.01, 1, 100], 0.95, "k"), log5.log_CI([0.01, 1, 100], 0.99, "k")],
+         [log6.V0, log6.r, log6.k, log6.log_CI([0.01, 1, 1000], 0.95, "k"), log6.log_CI([0.01, 1, 1000], 0.99, "k")]
+         ]
+
+# print(tabulate(data1, headers=col_names1, tablefmt="latex"))
+# print(tabulate(data2, headers=col_names2, tablefmt="latex"))
+
+
+# Logistic models with noise = 0.05 and varying k (High Initial Volume)
+log1 = Logistic(0.05, 10, 1, 1, 1)
+log2 = Logistic(0.05, 10, 1, 5, 1)
+log3 = Logistic(0.05, 10, 1, 10, 1)
+log4 = Logistic(0.05, 10, 1, 25, 1)
+log5 = Logistic(0.05, 10, 1, 100, 1)
+log6 = Logistic(0.05, 10, 1, 1000, 1)
+
+data1 = [[log1.V0, log1.r, log1.k, log1.log_CI([10, 1, 1], 0.95, "r"), log1.log_CI([10, 1, 1], 0.99, "r")],
+         [log2.V0, log2.r, log2.k, log2.log_CI([10, 1, 5], 0.95, "r"), log2.log_CI([10, 1, 5], 0.99, "r")],
+         [log4.V0, log4.r, log4.k, log4.log_CI([10, 1, 25], 0.95, "r"), log4.log_CI([10, 1, 25], 0.99, "r")],
+         [log5.V0, log5.r, log5.k, log5.log_CI([10, 1, 100], 0.95, "r"), log5.log_CI([10, 1, 100], 0.99, "r")],
+         [log6.V0, log6.r, log6.k, log6.log_CI([10, 1, 1000], 0.95, "r"), log6.log_CI([10, 1, 1000], 0.99, "r")]
+         ]
+data2 = [[log1.V0, log1.r, log1.k, log1.log_CI([10, 1, 1], 0.95, "k"), log1.log_CI([10, 1, 1], 0.99, "k")],
+         [log2.V0, log2.r, log2.k, log2.log_CI([10, 1, 5], 0.95, "k"), log2.log_CI([10, 1, 5], 0.99, "k")],
+         [log4.V0, log4.r, log4.k, log4.log_CI([10, 1, 25], 0.95, "k"), log4.log_CI([10, 1, 25], 0.99, "k")],
+         [log5.V0, log5.r, log5.k, log5.log_CI([10, 1, 100], 0.95, "k"), log5.log_CI([10, 1, 100], 0.99, "k")],
+         [log6.V0, log6.r, log6.k, log6.log_CI([10, 1, 1000], 0.95, "k"), log6.log_CI([10, 1, 1000], 0.99, "k")]
+         ]
+
+# print(tabulate(data1, headers=col_names1, tablefmt="latex"))
+# print(tabulate(data2, headers=col_names2, tablefmt="latex"))
+
+# Logistic model with varying noise
+log1 = Logistic(0.05, 1, 1, 10, 1)
+log2 = Logistic(0.2, 1, 1, 10, 1)
+log3 = Logistic(0.5, 1, 1, 10, 1)
+log4 = Logistic(1, 1, 1, 10, 1)
+
+# Logistic MLE results
+data1 = [[log1.V0, log1.r, log1.k, log1.noise, log1.get_mle([1,1,10])[0], log1.get_mle([1,1,10])[1], log1.get_mle([1,1,10])[2]],
+         [log2.V0, log2.r, log2.k, log2.noise, log2.get_mle([1,1,10])[0], log2.get_mle([1,1,10])[1], log2.get_mle([1,1,10])[2]],
+         [log3.V0, log3.r, log3.k, log3.noise, log3.get_mle([1,1,10])[0], log3.get_mle([1,1,10])[1], log3.get_mle([1,1,10])[2]],
+         [log4.V0, log4.r, log4.k, log4.noise, log4.get_mle([1,1,10])[0], log4.get_mle([1,1,10])[1], log4.get_mle([1,1,10])[2]]
+         ]
+
+col_names1 = ["V0", "r", "k", "\u03C3", "MLE for V0", "MLE for r", "MLE for k"]
+
+# print(tabulate(data1, headers=col_names1, tablefmt="latex"))
+
+#######################################################################################################################################
+
+# Gompertz models with noise = 0.05 and varying r (Low Initial Volume)
+gomp1 = Gompertz(0.05, 0.01, 0.1, 10)
+gomp2 = Gompertz(0.05, 0.01, 0.5, 10)
+gomp3 = Gompertz(0.05, 0.01, 1, 10)
+gomp4 = Gompertz(0.05, 0.01, 5, 10)
+gomp5 = Gompertz(0.05, 0.01, 25, 10)
+gomp6 = Gompertz(0.05, 0.01, 100, 10)
+
+data1 = [[gomp1.V0, gomp1.r, gomp1.k, gomp1.gomp_CI([0.01, 0.1, 10], 0.95, "r"), gomp1.gomp_CI([0.01, 0.1, 10], 0.99, "r")],
+         [gomp2.V0, gomp2.r, gomp2.k, gomp2.gomp_CI([0.01, 0.5, 10], 0.95, "r"), gomp2.gomp_CI([0.01, 0.5, 10], 0.99, "r")],
+         [gomp3.V0, gomp3.r, gomp3.k, gomp3.gomp_CI([0.01, 1, 10], 0.95, "r"), gomp3.gomp_CI([0.01, 1, 10], 0.99, "r")],
+         [gomp4.V0, gomp4.r, gomp4.k, gomp4.gomp_CI([0.01, 5, 10], 0.95, "r"), gomp4.gomp_CI([0.01, 5, 10], 0.99, "r")],
+         [gomp5.V0, gomp5.r, gomp5.k, gomp5.gomp_CI([0.01, 25, 10], 0.95, "r"), gomp5.gomp_CI([0.01, 25, 10], 0.99, "r")],
+         [gomp6.V0, gomp6.r, gomp6.k, gomp6.gomp_CI([0.01, 100, 10], 0.95, "r"), gomp6.gomp_CI([0.01, 100, 10], 0.99, "r")]
+         ]
+data2 = [[gomp1.V0, gomp1.r, gomp1.k, gomp1.gomp_CI([0.01, 0.1, 10], 0.95, "k"), gomp1.gomp_CI([0.01, 0.1, 10], 0.99, "k")],
+         [gomp2.V0, gomp2.r, gomp2.k, gomp2.gomp_CI([0.01, 0.5, 10], 0.95, "k"), gomp2.gomp_CI([0.01, 0.5, 10], 0.99, "k")],
+         [gomp3.V0, gomp3.r, gomp3.k, gomp3.gomp_CI([0.01, 1, 10], 0.95, "k"), gomp3.gomp_CI([0.01, 1, 10], 0.99, "k")],
+         [gomp4.V0, gomp4.r, gomp4.k, gomp4.gomp_CI([0.01, 5, 10], 0.95, "k"), gomp4.gomp_CI([0.01, 5, 10], 0.99, "k")],
+         [gomp5.V0, gomp5.r, gomp5.k, gomp5.gomp_CI([0.01, 25, 10], 0.95, "k"), gomp5.gomp_CI([0.01, 25, 10], 0.99, "k")],
+         [gomp6.V0, gomp6.r, gomp6.k, gomp6.gomp_CI([0.01, 100, 10], 0.95, "k"), gomp6.gomp_CI([0.01, 100, 10], 0.99, "k")]
+         ]
+
+# print(tabulate(data1, headers=col_names1, tablefmt="latex"))
+# print(tabulate(data2, headers=col_names2, tablefmt="latex"))
+
+
+
+# Gompertz models with noise = 0.05 and varying k (Low Initial Volume)
+gomp1 = Gompertz(0.05, 0.01, 1, 1)
+gomp2 = Gompertz(0.05, 0.01, 1, 5)
+gomp3 = Gompertz(0.05, 0.01, 1, 10)
+gomp4 = Gompertz(0.05, 0.01, 1, 25)
+gomp5 = Gompertz(0.05, 0.01, 1, 100)
+gomp6 = Gompertz(0.05, 0.01, 1, 1000)
+
+data1 = [[gomp1.V0, gomp1.r, gomp1.k, gomp1.gomp_CI([0.01, 1, 1], 0.95, "r"), gomp1.gomp_CI([0.01, 1, 1], 0.99, "r")],
+         [gomp2.V0, gomp2.r, gomp2.k, gomp2.gomp_CI([0.01, 1, 5], 0.95, "r"), gomp2.gomp_CI([0.01, 1, 5], 0.99, "r")],
+         [gomp3.V0, gomp3.r, gomp3.k, gomp3.gomp_CI([0.01, 1, 10], 0.95, "r"), gomp3.gomp_CI([0.01, 1, 10], 0.99, "r")],
+         [gomp4.V0, gomp4.r, gomp4.k, gomp4.gomp_CI([0.01, 1, 25], 0.95, "r"), gomp4.gomp_CI([0.01, 1, 25], 0.99, "r")],
+         [gomp5.V0, gomp5.r, gomp5.k, gomp5.gomp_CI([0.01, 1, 100], 0.95, "r"), gomp5.gomp_CI([0.01, 1, 100], 0.99, "r")],
+         [gomp6.V0, gomp6.r, gomp6.k, gomp6.gomp_CI([0.01, 1, 1000], 0.95, "r"), gomp6.gomp_CI([0.01, 1, 1000], 0.99, "r")]
+         ]
+data2 = [[gomp1.V0, gomp1.r, gomp1.k, gomp1.gomp_CI([0.01, 1, 1], 0.95, "k"), gomp1.gomp_CI([0.01, 1, 1], 0.99, "k")],
+         [gomp2.V0, gomp2.r, gomp2.k, gomp2.gomp_CI([0.01, 1, 5], 0.95, "k"), gomp2.gomp_CI([0.01, 1, 5], 0.99, "k")],
+         [gomp3.V0, gomp3.r, gomp3.k, gomp3.gomp_CI([0.01, 1, 10], 0.95, "k"), gomp3.gomp_CI([0.01, 1, 10], 0.99, "k")],
+         [gomp4.V0, gomp4.r, gomp4.k, gomp4.gomp_CI([0.01, 1, 25], 0.95, "k"), gomp4.gomp_CI([0.01, 1, 25], 0.99, "k")],
+         [gomp5.V0, gomp5.r, gomp5.k, gomp5.gomp_CI([0.01, 1, 100], 0.95, "k"), gomp5.gomp_CI([0.01, 1, 100], 0.99, "k")],
+         [gomp6.V0, gomp6.r, gomp6.k, gomp6.gomp_CI([0.01, 1, 1000], 0.95, "k"), gomp6.gomp_CI([0.01, 1, 1000], 0.99, "k")]
+         ]
+
+# print(tabulate(data1, headers=col_names1, tablefmt="latex"))
+# print(tabulate(data2, headers=col_names2, tablefmt="latex"))
+
+
+# Gompertz models with noise = 0.05 and varying k (High Initial Volume)
+gomp1 = Gompertz(0.05, 10, 1, 1)
+gomp2 = Gompertz(0.05, 10, 1, 5)
+gomp3 = Gompertz(0.05, 10, 1, 10)
+gomp4 = Gompertz(0.05, 10, 1, 25)
+gomp5 = Gompertz(0.05, 10, 1, 100)
+gomp6 = Gompertz(0.05, 10, 1, 1000)
+
+data1 = [[gomp1.V0, gomp1.r, gomp1.k, gomp1.gomp_CI([10, 1, 1], 0.95, "r"), gomp1.gomp_CI([10, 1, 1], 0.99, "r")],
+         [gomp2.V0, gomp2.r, gomp2.k, gomp2.gomp_CI([10, 1, 5], 0.95, "r"), gomp2.gomp_CI([10, 1, 5], 0.99, "r")],
+         [gomp4.V0, gomp4.r, gomp4.k, gomp4.gomp_CI([10, 1, 25], 0.95, "r"), gomp4.gomp_CI([10, 1, 25], 0.99, "r")],
+         [gomp5.V0, gomp5.r, gomp5.k, gomp5.gomp_CI([10, 1, 100], 0.95, "r"), gomp5.gomp_CI([10, 1, 100], 0.99, "r")],
+         [gomp6.V0, gomp6.r, gomp6.k, gomp6.gomp_CI([10, 1, 1000], 0.95, "r"), gomp6.gomp_CI([10, 1, 1000], 0.99, "r")]
+         ]
+data2 = [[gomp1.V0, gomp1.r, gomp1.k, gomp1.gomp_CI([10, 1, 1], 0.95, "k"), gomp1.gomp_CI([10, 1, 1], 0.99, "k")],
+         [gomp2.V0, gomp2.r, gomp2.k, gomp2.gomp_CI([10, 1, 5], 0.95, "k"), gomp2.gomp_CI([10, 1, 5], 0.99, "k")],
+         [gomp4.V0, gomp4.r, gomp4.k, gomp4.gomp_CI([10, 1, 25], 0.95, "k"), gomp4.gomp_CI([10, 1, 25], 0.99, "k")],
+         [gomp5.V0, gomp5.r, gomp5.k, gomp5.gomp_CI([10, 1, 100], 0.95, "k"), gomp5.gomp_CI([10, 1, 100], 0.99, "k")],
+         [gomp6.V0, gomp6.r, gomp6.k, gomp6.gomp_CI([10, 1, 1000], 0.95, "k"), gomp6.gomp_CI([10, 1, 1000], 0.99, "k")]
+         ]
+
+# print(tabulate(data1, headers=col_names1, tablefmt="latex"))
+# print(tabulate(data2, headers=col_names2, tablefmt="latex"))
+
+
+# Gompertz model with varying noise
+gomp1 = Gompertz(0.05, 1, 1, 10)
+gomp2 = Gompertz(0.2, 1, 1, 10)
+gomp3 = Gompertz(0.5, 1, 1, 10)
+gomp4 = Gompertz(1, 1, 1, 10)
+
+# Logistic MLE results
+data1 = [[gomp1.V0, gomp1.r, gomp1.k, gomp1.noise, gomp1.get_mle([1,1,10])[0], gomp1.get_mle([1,1,10])[1], gomp1.get_mle([1,1,10])[2]],
+         [gomp2.V0, gomp2.r, gomp2.k, gomp2.noise, gomp2.get_mle([1,1,10])[0], gomp2.get_mle([1,1,10])[1], gomp2.get_mle([1,1,10])[2]],
+         [gomp3.V0, gomp3.r, gomp3.k, gomp3.noise, gomp3.get_mle([1,1,10])[0], gomp3.get_mle([1,1,10])[1], gomp3.get_mle([1,1,10])[2]],
+         [gomp4.V0, gomp4.r, gomp4.k, gomp4.noise, gomp4.get_mle([1,1,10])[0], gomp4.get_mle([1,1,10])[1], gomp4.get_mle([1,1,10])[2]]
+         ]
+
+col_names1 = ["V0", "r", "k", "\u03C3", "MLE for V0", "MLE for r", "MLE for k"]
+
+# print(tabulate(data1, headers=col_names1, tablefmt="latex"))
+
+#######################################################################################################################################
+
+
+# Bertalanffy models with noise = 0.05 (Low Initial Volume)
+bert1 = Bertalanffy(0.05, 0.01, 1, 1, 1)
+bert2 = Bertalanffy(0.05, 0.01, 2, 1, 1)
+bert3 = Bertalanffy(0.05, 0.01, 1, 2, 1)
+
+data1 = [[bert1.V0, bert1.b, bert1.d, bert1.bert_CI([0.01, 1, 1], 0.95, "b"), bert1.bert_CI([0.01, 1, 1], 0.99, "b")],
+         [bert2.V0, bert2.b, bert2.d, bert2.bert_CI([0.01, 2, 1], 0.95, "b"), bert2.bert_CI([0.01, 2, 1], 0.99, "b")],
+         [bert3.V0, bert3.b, bert3.d, bert3.bert_CI([0.01, 1, 2], 0.95, "b"), bert3.bert_CI([0.01, 1, 2], 0.99, "b")]
+         ]
+data2 = [[bert1.V0, bert1.b, bert1.d, bert1.bert_CI([0.01, 1, 1], 0.95, "d"), bert1.bert_CI([0.01, 1, 1], 0.99, "d")],
+         [bert2.V0, bert2.b, bert2.d, bert2.bert_CI([0.01, 2, 1], 0.95, "d"), bert2.bert_CI([0.01, 2, 1], 0.99, "d")],
+         [bert3.V0, bert3.b, bert3.d, bert3.bert_CI([0.01, 1, 2], 0.95, "d"), bert3.bert_CI([0.01, 1, 2], 0.99, "d")]
+         ]
+
+col_names1 = ["V0", "b", "d", "95% Confidence Interval for b", "99% Confidence Interval for b"]
+col_names2 = ["V0", "b", "d", "95% Confidence Interval for d", "99% Confidence Interval for d"]
+
+# print(tabulate(data1, headers=col_names1, tablefmt="latex"))
+# print(tabulate(data2, headers=col_names2, tablefmt="latex"))
+
+# Bertalanffy models with noise = 0.05 (High Initial Volume)
+bert1 = Bertalanffy(0.05, 10, 1, 1, 1)
+bert2 = Bertalanffy(0.05, 10, 2, 1, 1)
+bert3 = Bertalanffy(0.05, 10, 1, 2, 1)
+
+data1 = [[bert1.V0, bert1.b, bert1.d, bert1.bert_CI([10, 1, 1], 0.95, "b"), bert1.bert_CI([10, 1, 1], 0.99, "b")],
+         [bert2.V0, bert2.b, bert2.d, bert2.bert_CI([10, 2, 1], 0.95, "b"), bert2.bert_CI([10, 2, 1], 0.99, "b")],
+         [bert3.V0, bert3.b, bert3.d, bert3.bert_CI([10, 1, 2], 0.95, "b"), bert3.bert_CI([10, 1, 2], 0.99, "b")]
+         ]
+data2 = [[bert1.V0, bert1.b, bert1.d, bert1.bert_CI([10, 1, 1], 0.95, "d"), bert1.bert_CI([10, 1, 1], 0.99, "d")],
+         [bert2.V0, bert2.b, bert2.d, bert2.bert_CI([10, 2, 1], 0.95, "d"), bert2.bert_CI([10, 2, 1], 0.99, "d")],
+         [bert3.V0, bert3.b, bert3.d, bert3.bert_CI([10, 1, 2], 0.95, "d"), bert3.bert_CI([10, 1, 2], 0.99, "d")]
+         ]
+
+col_names1 = ["V0", "b", "d", "95% Confidence Interval for b", "99% Confidence Interval for b"]
+col_names2 = ["V0", "b", "d", "95% Confidence Interval for d", "99% Confidence Interval for d"]
+
+# print(tabulate(data1, headers=col_names1, tablefmt="latex"))
+# print(tabulate(data2, headers=col_names2, tablefmt="latex"))
+
+# Bertalanffy model with varying noise
+bert1 = Bertalanffy(0.05, 1, 1, 10, 1)
+bert2 = Bertalanffy(0.2, 1, 1, 10, 1)
+bert3 = Bertalanffy(0.5, 1, 1, 10, 1)
+bert4 = Bertalanffy(1, 1, 1, 10, 1)
+
+# Logistic MLE results
+data1 = [[bert1.V0, bert1.b, bert1.d, bert1.noise, bert1.get_mle([1,1,10])[0], bert1.get_mle([1,1,10])[1], bert1.get_mle([1,1,10])[2]],
+         [bert2.V0, bert2.b, bert2.d, bert2.noise, bert2.get_mle([1,1,10])[0], bert2.get_mle([1,1,10])[1], bert2.get_mle([1,1,10])[2]],
+         [bert3.V0, bert3.b, bert3.d, bert3.noise, bert3.get_mle([1,1,10])[0], bert3.get_mle([1,1,10])[1], bert3.get_mle([1,1,10])[2]],
+         [bert4.V0, bert4.b, bert4.d, bert4.noise, bert4.get_mle([1,1,10])[0], bert4.get_mle([1,1,10])[1], bert4.get_mle([1,1,10])[2]]
+         ]
+
+col_names1 = ["V0", "b", "d", "\u03C3", "MLE for V0", "MLE for b", "MLE for d"]
+
 print(tabulate(data1, headers=col_names1, tablefmt="latex"))
 
-# Mendelsohn models with b = 2 and varying noise
-#mend4 = Mendelsohn(0.05, 0.01, 1, 2, 1)
-mend5 = Mendelsohn(0.2, 0.01, 1, 2, 1)
-mend6 = Mendelsohn(0.5, 0.01, 1, 2, 1)
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 # log = Logistic(0.05, 5, 1, 10, 10)
@@ -1122,8 +1471,8 @@ mend6 = Mendelsohn(0.5, 0.01, 1, 2, 1)
 
 
 
-# y=[-mend4.mend_mle([0.01,1,2.5]).fun - mend4.log_l([mend4.mend_mle([0.01,1,2.5]).x[0], mend4.mend_mle([0.01,1,2.5]).x[1], b], mend4.noise) - chi2.ppf(0.99, 1)/2 for b in np.linspace(2, 1000, 101)]
-# plt.plot(np.linspace(2, 2000, 101), y)
+# y=[-mend8.mend_mle([0.01,1,2.5]).fun - mend8.log_l([mend8.mend_mle([0.01,1,2.5]).x[0], mend8.mend_mle([0.01,1,2.5]).x[1], b], mend8.noise) - chi2.ppf(0.95, 1)/2 for b in np.linspace(0, 3, 101)]
+# plt.plot(np.linspace(0, 3, 101), y)
 # plt.show()
 
 
