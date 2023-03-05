@@ -1,4 +1,6 @@
 import matplotlib.pyplot as plt
+plt.rc('legend', fontsize=36)
+plt.rc('axes', titlesize=36)
 import numpy as np
 from scipy.integrate import solve_ivp
 from scipy.optimize import minimize
@@ -40,7 +42,7 @@ class Exponential:
         return theta[0]*np.exp(theta[1]*t)
     # Numerical solution to Exponential ODE, theta = [V0, a]
     def exp_num_sol(self, theta):
-        return solve_ivp(self.ode, [0, 10], [theta[0]], args = (theta[1],), t_eval = np.linspace(0, 10, 1001))
+        return solve_ivp(self.ode, [0, 10], [theta[0]], args = (theta[1],), t_eval = np.linspace(0, 10, 101))
     # Solution with noise
     def exp_sol_noise(self, theta):
         np.random.seed(1)
@@ -48,17 +50,22 @@ class Exponential:
         return self.exp_sol(theta, t_eval) * (1 + self.noise * X)
     # Plot of noisy solution
     def exp_sol_noise_plot(self, theta, noise):
+        t = np.linspace(0,10,101)
         np.random.seed(1)
-        X = np.random.normal(0, 1, 1001)
+        X = np.random.normal(0, 1, 101)
         v = self.exp_num_sol(theta).y[0]
-        v1 = self.exp_sol(theta, t_eval) * (1 + noise[0] * X)
-        v2 = self.exp_sol(theta, t_eval) * (1 + noise[1] * X)
-        v3 = self.exp_sol(theta, t_eval) * (1 + noise[2] * X)
+        v1 = self.exp_sol(theta, t) * (1 + noise[0] * X)
+        v2 = self.exp_sol(theta, t) * (1 + noise[1] * X)
+        v3 = self.exp_sol(theta, t) * (1 + noise[2] * X)
         noise = [str(noise[i]) for i in range(len(noise))]           
-        plt.plot(t_eval, v, '-', label="True Solution")
-        plt.plot(t_eval, v1, '--', label="\u03C3 = " + noise[0])
-        plt.plot(t_eval, v2, '--', label="\u03C3 = " + noise[1])
-        plt.plot(t_eval, v3, '--', label="\u03C3 = " + noise[2])
+        plt.plot(t, v, '-', label="True Solution")
+        plt.plot(t, v1, '--', label="\u03C3 = " + noise[0])
+        plt.plot(t, v2, '--', label="\u03C3 = " + noise[1])
+        plt.plot(t, v3, '--', label="\u03C3 = " + noise[2])
+        plt.tick_params(labelsize=36)
+        plt.title("Comparison of Varying Noise on the Exponential Model")
+        plt.xlabel("Time", fontsize=36)
+        plt.ylabel("Volume", fontsize=36)
         plt.legend()
         plt.show()
 
@@ -115,7 +122,7 @@ class Exponential:
         plt.ylabel("Volume")
         plt.show()
 
-
+    # Constant Dosage
 
     # Dosage ODE
     def dos_ode(self, t, v, a, D):
@@ -190,11 +197,12 @@ class Exponential:
         D = [self.D(i, V0, a, T, c) for i in t]
         plt.plot(t, v, label = "Volume")
         plt.plot(t, D, label = "Dosage")
+        plt.tick_params(labelsize=36)
         plt.legend()
         c = str(c)
-        plt.title("Volume/Dosage Plot for Exponential Model with c =" + c)
-        plt.ylabel("Volume/Dosage")
-        plt.xlabel("Time")
+        plt.title("Optimal Dosage Schedule for the Exponential Model")
+        plt.xlabel("Time", fontsize=36)
+        plt.ylabel("Volume/Dosage", fontsize=36)
         plt.show()
     
 
@@ -217,7 +225,7 @@ class Mendelsohn:
         return ((1 - theta[2])*theta[1]*t + theta[0]**(1-theta[2]))**(1/(1-theta[2]))
     # Numerical solution to Mendelsohn ODE, theta = [V0, a, b]
     def mend_num_sol(self, theta): 
-        return solve_ivp(self.ode, [0, 10], [theta[0]], args = (theta[1], theta[2]), t_eval = np.linspace(0, 10, 1001))
+        return solve_ivp(self.ode, [0, 10], [theta[0]], args = (theta[1], theta[2]), t_eval = np.linspace(0, 10, 101))
     # Solution with noise
     def mend_sol_noise(self, theta):
         np.random.seed(1)
@@ -225,17 +233,22 @@ class Mendelsohn:
         return self.mend_sol(theta, t_eval) * (1 + self.noise * X)
     # Plot of noisy solution
     def mend_sol_noise_plot(self, theta, noise):
+        t = np.linspace(0,10,101)
         np.random.seed(1)
-        X = np.random.normal(0, 1, 1001)
+        X = np.random.normal(0, 1, 101)
         v = self.mend_num_sol(theta).y[0]
-        v1 = self.mend_sol(theta, t_eval) * (1 + noise[0] * X)
-        v2 = self.mend_sol(theta, t_eval) * (1 + noise[1] * X)
-        v3 = self.mend_sol(theta, t_eval) * (1 + noise[2] * X)
+        v1 = self.mend_sol(theta, t) * (1 + noise[0] * X)
+        v2 = self.mend_sol(theta, t) * (1 + noise[1] * X)
+        v3 = self.mend_sol(theta, t) * (1 + noise[2] * X)
         noise = [str(noise[i]) for i in range(len(noise))]           
-        plt.plot(t_eval, v, '-', label="True Solution")
-        plt.plot(t_eval, v1, '--', label="\u03C3 = " + noise[0])
-        plt.plot(t_eval, v2, '--', label="\u03C3 = " + noise[1])
-        plt.plot(t_eval, v3, '--', label="\u03C3 = " + noise[2])
+        plt.plot(t, v, '-', label="True Solution")
+        plt.plot(t, v1, '--', label="\u03C3 = " + noise[0])
+        plt.plot(t, v2, '--', label="\u03C3 = " + noise[1])
+        plt.plot(t, v3, '--', label="\u03C3 = " + noise[2])
+        plt.tick_params(labelsize=36)
+        plt.title("Comparison of Varying Noise on the Mendelsohn Model")
+        plt.xlabel("Time", fontsize=36)
+        plt.ylabel("Volume", fontsize=36)
         plt.legend()
         plt.show()
 
@@ -300,7 +313,7 @@ class Mendelsohn:
         plt.ylabel("Volume")
         plt.show()
 
-
+    # Constant Dosage
 
     # Dosage ODE
     def dos_ode(self, t, v, a, b, D):
@@ -354,14 +367,15 @@ class Mendelsohn:
         return [self.a*(v**self.b) + p*v**2/(2*self.c), -self.a*self.b*p*(v**(self.b-1)) - v*p**2/(2*self.c)]
     # Numerical solution of System of ODEs with intial conditions [V0, P0]
     def num_sol_sys(self, P0, T, V0):
-        t_star = (V0**(1-self.b))/(self.a*(self.b - 1))
-        return solve_ivp(self.sys_ode, [t_star, T], [V0, P0], t_eval = np.linspace(t_star, T, 1000)[1:])
+        # t_star = (V0**(1-self.b))/(self.a*(self.b - 1))
+        # return solve_ivp(self.sys_ode, [t_star, T], [V0, P0], t_eval = np.linspace(t_star, T, 1000)[1:])
+        return solve_ivp(self.sys_ode, [0, T], [V0, P0], t_eval = np.linspace(0, T, 101))
     # Shooting Method Residual
     def res_bc(self, P0, T, V0):
         return self.num_sol_sys(P0, T, V0).y[1][-1] + 2*(self.num_sol_sys(P0, T, V0).y[0][-1])
     # Not a scalar (Root Result)
     def find_p0(self, T, V0):
-        return root_scalar(self.res_bc, x0 = -10, x1 = -10, args=(T, V0), maxiter=5000)
+        return root_scalar(self.res_bc, x0 = -10, x1 = -15, args=(T, V0), maxiter=5000)
     def get_p0(self, T, V0):
         return self.find_p0(T, V0).root
     def plot_res(self, T, V0):
@@ -379,7 +393,8 @@ class Mendelsohn:
         return -((self.get_v(T, V0))*(self.get_p(T, V0)))/(2*self.c)
     def plot_v(self, T, V0):
         #t = np.linspace(0, T, 999)
-        t = np.linspace((V0**(1-self.b))/(self.a*(self.b-1)), T, 1000)[1:]
+        # t = np.linspace((V0**(1-self.b))/(self.a*(self.b-1)), T, 1000)[1:]
+        t = np.linspace(0, T, 101)
         plt.plot(t, self.get_v(T, V0))
         plt.ylabel("Volume")
         plt.xlabel("Time")
@@ -387,7 +402,8 @@ class Mendelsohn:
         plt.title("Mendelsohn Model of Tumour Volume with initial condition: V0 = " + V0)
         plt.show()
     def plot_d(self, T, V0):
-        t = np.linspace((V0**(1-self.b))/(self.a*(self.b-1)), T, 1000)[1:]
+        # t = np.linspace((V0**(1-self.b))/(self.a*(self.b-1)), T, 1000)[1:]
+        t = np.linspace(0, T, 101)
         plt.plot(t, self.opt_d(T, V0))
         plt.ylabel("Dosage")
         plt.xlabel("Time")
@@ -395,14 +411,16 @@ class Mendelsohn:
         plt.title("Mendelsohn Model of Optimal Dosage with initial condition: V0 = " + V0)
         plt.show()
     # Volume/Dosage Plot
-    def plot_v_d(self, T, V0):
-        t = np.linspace((V0**(1-self.b))/(self.a*(self.b-1)), T, 1000)[1:]
+    def plot_v_D(self, T, V0):
+        # t = np.linspace((V0**(1-self.b))/(self.a*(self.b-1)), T, 1000)[1:]
+        t = np.linspace(0, T, 101)
         plt.plot(t, self.get_v(T, V0), label = "Volume")
         plt.plot(t, self.opt_d(T, V0), label = "Dosage")
+        plt.tick_params(labelsize=36)
         plt.legend()
-        plt.title("Volume/Dosage over time for Mendelsohn model")
-        plt.ylabel("Volume/Dosage")
-        plt.xlabel("Time")
+        plt.title("Optimal Dosage Schedule for the Mendelsohn Model")
+        plt.xlabel("Time", fontsize=36)
+        plt.ylabel("Volume/Dosage", fontsize=36)
         plt.show()
 
 
@@ -426,7 +444,7 @@ class Logistic:
         return (theta[0]*theta[2])/(theta[0] + (theta[2] - theta[0])*np.exp(-theta[1]*t))
     # Numerical solution to Logistic ODE, theta = [V0, r, K]
     def log_num_sol(self, theta): 
-        return solve_ivp(self.ode, [0, 10], [theta[0]], args = (theta[1], theta[2]), t_eval = np.linspace(0, 10, 1001))
+        return solve_ivp(self.ode, [0, 10], [theta[0]], args = (theta[1], theta[2]), t_eval = np.linspace(0, 10, 101))
     # Solution with noise
     def log_sol_noise(self, theta):
         np.random.seed(1)
@@ -434,17 +452,22 @@ class Logistic:
         return self.log_sol(theta, t_eval) * (1 + self.noise * X)
     # Plot of noisy solution
     def log_sol_noise_plot(self, theta, noise):
+        t = np.linspace(0,10,101)
         np.random.seed(1)
-        X = np.random.normal(0, 1, 1001)
+        X = np.random.normal(0, 1, 101)
         v = self.log_num_sol(theta).y[0]
-        v1 = self.log_sol(theta, t_eval) * (1 + noise[0] * X)
-        v2 = self.log_sol(theta, t_eval) * (1 + noise[1] * X)
-        v3 = self.log_sol(theta, t_eval) * (1 + noise[2] * X)
+        v1 = self.log_sol(theta, t) * (1 + noise[0] * X)
+        v2 = self.log_sol(theta, t) * (1 + noise[1] * X)
+        v3 = self.log_sol(theta, t) * (1 + noise[2] * X)
         noise = [str(noise[i]) for i in range(len(noise))]           
-        plt.plot(t_eval, v, '-', label="True Solution")
-        plt.plot(t_eval, v1, '--', label="\u03C3 = " + noise[0])
-        plt.plot(t_eval, v2, '--', label="\u03C3 = " + noise[1])
-        plt.plot(t_eval, v3, '--', label="\u03C3 = " + noise[2])
+        plt.plot(t, v, '-', label="True Solution")
+        plt.plot(t, v1, '--', label="\u03C3 = " + noise[0])
+        plt.plot(t, v2, '--', label="\u03C3 = " + noise[1])
+        plt.plot(t, v3, '--', label="\u03C3 = " + noise[2])
+        plt.tick_params(labelsize=36)
+        plt.title("Comparison of Varying Noise on the Logistic Model")
+        plt.xlabel("Time", fontsize=36)
+        plt.ylabel("Volume", fontsize=36)
         plt.legend()
         plt.show()
 
@@ -510,6 +533,7 @@ class Logistic:
         plt.ylabel("Volume")
         plt.show()
     
+    # Constant Dosage
 
     # Dosage ODE
     def dos_ode(self, t, v, r, k, D):
@@ -524,7 +548,7 @@ class Logistic:
         return solve_ivp(self.dos_ode, time, [theta[0]], args=(theta[1], theta[2], D), t_eval = np.linspace(time[0], time[-1], 101))
     # Find Estimate for D
     def D_est(self, time, theta, c):
-        return minimize(obj_function, 1, args=(theta, self.dos_sol, time, c))
+        return minimize(obj_function, 2, args=(theta, self.dos_sol, time, c))
     # Get Estimate for D
     def get_D(self, time, theta, c):
         return self.D_est(time, theta, c).x[0]
@@ -553,7 +577,7 @@ class Logistic:
     def get_p0(self, T, V0):
         return self.find_p0(T, V0).root
     def plot_res(self, T, V0):
-        p = np.linspace(2, -2, 101)
+        p = np.linspace(-1.2, -0.8, 101)
         res = [self.res_bc(x, T, V0) for x in p]
         plt.plot(p, res)
         plt.show()
@@ -588,11 +612,12 @@ class Logistic:
         D = self.opt_d(T, V0)
         plt.plot(t, v, label = "Volume")
         plt.plot(t, D, label = "Dosage")
+        plt.tick_params(labelsize=36)
         plt.legend()
         c = str(c)
-        plt.title("Volume/Dosage Plot for Logistic Model with c =" + c)
-        plt.ylabel("Volume/Dosage")
-        plt.xlabel("Time")
+        plt.title("Optimal Dosage Schedule for the Logistic Model")
+        plt.xlabel("Time", fontsize=36)
+        plt.ylabel("Volume/Dosage", fontsize=36)
         plt.show()
     
 
@@ -615,7 +640,7 @@ class Gompertz:
         return theta[2]*(theta[0]/theta[2])**np.exp(-theta[1]*t)
     # Numerical solution to Gompertz ODE, theta = [V0, r, K]
     def gomp_num_sol(self, theta): 
-        return solve_ivp(self.ode, [0, 10], [theta[0]], args = (theta[1], theta[2]), t_eval = np.linspace(0, 10, 1001))
+        return solve_ivp(self.ode, [0, 10], [theta[0]], args = (theta[1], theta[2]), t_eval = np.linspace(0, 10, 101))
     # Solution with noise
     def gomp_sol_noise(self, theta):
         np.random.seed(1)
@@ -623,17 +648,22 @@ class Gompertz:
         return self.gomp_sol(theta, t_eval) * (1 + self.noise * X)
     # Plot of noisy solution
     def gomp_sol_noise_plot(self, theta, noise):
+        t = np.linspace(0,10,101)
         np.random.seed(1)
-        X = np.random.normal(0, 1, 1001)
+        X = np.random.normal(0, 1, 101)
         v = self.gomp_num_sol(theta).y[0]
-        v1 = self.gomp_sol(theta, t_eval) * (1 + noise[0] * X)
-        v2 = self.gomp_sol(theta, t_eval) * (1 + noise[1] * X)
-        v3 = self.gomp_sol(theta, t_eval) * (1 + noise[2] * X)
+        v1 = self.gomp_sol(theta, t) * (1 + noise[0] * X)
+        v2 = self.gomp_sol(theta, t) * (1 + noise[1] * X)
+        v3 = self.gomp_sol(theta, t) * (1 + noise[2] * X)
         noise = [str(noise[i]) for i in range(len(noise))]           
-        plt.plot(t_eval, v, '-', label="True Solution")
-        plt.plot(t_eval, v1, '--', label="\u03C3 = " + noise[0])
-        plt.plot(t_eval, v2, '--', label="\u03C3 = " + noise[1])
-        plt.plot(t_eval, v3, '--', label="\u03C3 = " + noise[2])
+        plt.plot(t, v, '-', label="True Solution")
+        plt.plot(t, v1, '--', label="\u03C3 = " + noise[0])
+        plt.plot(t, v2, '--', label="\u03C3 = " + noise[1])
+        plt.plot(t, v3, '--', label="\u03C3 = " + noise[2])
+        plt.tick_params(labelsize=36)
+        plt.title("Comparison of Varying Noise on the Gompertz Model")
+        plt.xlabel("Time", fontsize=36)
+        plt.ylabel("Volume", fontsize=36)
         plt.legend()
         plt.show()
     
@@ -698,7 +728,7 @@ class Gompertz:
         plt.ylabel("Volume")
         plt.show()
 
-    
+    # Constant Dosage
 
     # Dosage ODE
     def dos_ode(self, t, v, r, k, D):
@@ -779,11 +809,12 @@ class Gompertz:
         D = [self.D(i, V0, r, K, T, c) for i in t]
         plt.plot(t, v, label = "Volume")
         plt.plot(t, D, label = "Dosage")
+        plt.tick_params(labelsize=36)
         plt.legend()
         c = str(c)
-        plt.title("Volume/Dosage Plot for Gompertz Model with c =" + c)
-        plt.ylabel("Volume/Dosage")
-        plt.xlabel("Time")
+        plt.title("Optimal Dosage Schedule for the Gompertz Model")
+        plt.xlabel("Time", fontsize=36)
+        plt.ylabel("Volume/Dosage", fontsize=36)
         plt.show()
 
 
@@ -806,7 +837,7 @@ class Bertalanffy:
         return ((theta[1]/theta[2])*(1 - np.exp(-theta[2]*t/3)) + (theta[0]**(1/3))*np.exp(-theta[2]*t/3))**3
     # Numerical solution to Bertalanffy ODE, theta = [V0, b, d]
     def bert_num_sol(self, theta):
-        return solve_ivp(self.ode, [0, 10], [theta[0]], args = (theta[1], theta[2]), t_eval = np.linspace(0, 10, 1001))
+        return solve_ivp(self.ode, [0, 10], [theta[0]], args = (theta[1], theta[2]), t_eval = np.linspace(0, 10, 101))
     # Solution with noise
     def bert_sol_noise(self, theta):
         np.random.seed(1)
@@ -814,17 +845,22 @@ class Bertalanffy:
         return self.bert_sol(theta, t_eval) * (1 + self.noise * X)
     # Plot of noisy solution
     def bert_sol_noise_plot(self, theta, noise):
+        t = np.linspace(0,10,101)
         np.random.seed(1)
-        X = np.random.normal(0, 1, 1001)
+        X = np.random.normal(0, 1, 101)
         v = self.bert_num_sol(theta).y[0]
-        v1 = self.bert_sol(theta, t_eval) * (1 + noise[0] * X)
-        v2 = self.bert_sol(theta, t_eval) * (1 + noise[1] * X)
-        v3 = self.bert_sol(theta, t_eval) * (1 + noise[2] * X)
+        v1 = self.bert_sol(theta, t) * (1 + noise[0] * X)
+        v2 = self.bert_sol(theta, t) * (1 + noise[1] * X)
+        v3 = self.bert_sol(theta, t) * (1 + noise[2] * X)
         noise = [str(noise[i]) for i in range(len(noise))]           
-        plt.plot(t_eval, v, '-', label="True Solution")
-        plt.plot(t_eval, v1, '--', label="\u03C3 = " + noise[0])
-        plt.plot(t_eval, v2, '--', label="\u03C3 = " + noise[1])
-        plt.plot(t_eval, v3, '--', label="\u03C3 = " + noise[2])
+        plt.plot(t, v, '-', label="True Solution")
+        plt.plot(t, v1, '--', label="\u03C3 = " + noise[0])
+        plt.plot(t, v2, '--', label="\u03C3 = " + noise[1])
+        plt.plot(t, v3, '--', label="\u03C3 = " + noise[2])
+        plt.tick_params(labelsize=36)
+        plt.title("Comparison of Varying Noise on the Bertalanffy Model")
+        plt.xlabel("Time", fontsize=36)
+        plt.ylabel("Volume", fontsize=36)
         plt.legend()
         plt.show()
 
@@ -888,7 +924,7 @@ class Bertalanffy:
         plt.ylabel("Volume")
         plt.show()
 
-
+    # Constant Dosage
 
     # Dosage ODE
     def dos_ode(self, t, v, b, d, D):
@@ -926,7 +962,7 @@ class Bertalanffy:
         return self.num_sol_sys(P0, T, V0).y[1][-1] + 2*(self.num_sol_sys(P0, T, V0).y[0][-1])
     # Not a scalar (Root Result)
     def find_p0(self, T, V0):
-        return root_scalar(self.res_bc, x0 = -1, x1 = -1.5, args=(T, V0), maxiter=1000)
+        return root_scalar(self.res_bc, x0 = -0.012, x1 = -1.5, args=(T, V0), maxiter=1000)
     def get_p0(self, T, V0):
         return self.find_p0(T, V0).root
     def plot_res(self, T, V0):
@@ -965,11 +1001,12 @@ class Bertalanffy:
         D = self.opt_d(T, V0)
         plt.plot(t, v, label = "Volume")
         plt.plot(t, D, label = "Dosage")
+        plt.tick_params(labelsize=36)
         plt.legend()
         c = str(c)
-        plt.title("Volume/Dosage Plot for Bertalanffy Model with c =" + c)
-        plt.ylabel("Volume/Dosage")
-        plt.xlabel("Time")
+        plt.title("Optimal Dosage Schedule for the Bertalanffy Model")
+        plt.xlabel("Time", fontsize=36)
+        plt.ylabel("Volume/Dosage", fontsize=36)
         plt.show()
 
 
@@ -1164,19 +1201,38 @@ col_names1 = ["V0", "a", "\u03C3", "MLE for V0", "MLE for a"]
 
 # print(tabulate(data1, headers=col_names1, tablefmt="latex"))
 
-# exp1.plot_v_D(0.01, exp1.a, 10, 0.01)
-# exp1.plot_v_D(0.01, exp1.a, 10, 1)
-# exp1.plot_v_D(0.01, exp1.a, 10, 100)
+# Optimal Control Plot
+# exp1 = Exponential(0.05, 1, 1)
+# exp1.plot_v_D(exp1.V0, exp1.a, 10, 1)
 
-# exp1.exp_sol_noise_plot([exp1.V0, exp1.a], [0.05, 0.2, 0.5])
+# exp1.exp_sol_noise_plot([exp1.V0, 0.2], [0.05, 0.2, 0.5])
 
 # exp1.plot([exp1.V0, exp1.a])
 
-print(exp1.get_D(np.linspace(0,10,101), [exp1.V0, exp1.a], 0.1))
-print(exp1.get_D(np.linspace(0,10,101), [exp1.V0, exp1.a], 1))
-print(exp1.get_D(np.linspace(0,10,101), [exp1.V0, exp1.a], 10))
+exp1 = Exponential(0.05, 1, 1)
+exp2 = Exponential(0.05, 0.01, 1)
+exp3 = Exponential(0.05, 1, 5)
 
-exp1.obj_func_plot(np.linspace(0,10,101), [exp1.V0, exp1.a], 1)
+data = [[exp1.V0, exp1.a, 0.1, exp1.get_D(np.linspace(0,10,101), [exp1.V0, exp1.a], 0.1)],
+         [exp1.V0, exp1.a, 1, exp1.get_D(np.linspace(0,10,101), [exp1.V0, exp1.a], 1)],
+         [exp1.V0, exp1.a, 10, exp1.get_D(np.linspace(0,10,101), [exp1.V0, exp1.a], 10)],
+         [exp2.V0, exp2.a, 0.1, exp2.get_D(np.linspace(0,10,101), [exp2.V0, exp2.a], 0.1)],
+         [exp2.V0, exp2.a, 1, exp2.get_D(np.linspace(0,10,101), [exp2.V0, exp2.a], 1)],
+         [exp2.V0, exp2.a, 10, exp2.get_D(np.linspace(0,10,101), [exp2.V0, exp2.a], 10)],
+         [exp3.V0, exp3.a, 0.1, exp3.get_D(np.linspace(0,10,101), [exp3.V0, exp3.a], 0.1)],
+         [exp3.V0, exp3.a, 1, exp3.get_D(np.linspace(0,10,101), [exp3.V0, exp3.a], 1)],
+         [exp3.V0, exp3.a, 10, exp3.get_D(np.linspace(0,10,101), [exp3.V0, exp3.a], 10)]
+         ]
+
+col_names = ["V0", "a", "c", "D*"]
+
+# print(tabulate(data, headers=col_names, tablefmt="latex"))
+
+# print(exp1.get_D(np.linspace(0,10,101), [exp1.V0, exp1.a], 0.1))
+# print(exp1.get_D(np.linspace(0,10,101), [exp1.V0, exp1.a], 1))
+# print(exp1.get_D(np.linspace(0,10,101), [exp1.V0, exp1.a], 10))
+
+
 
 #######################################################################################################################################
 
@@ -1245,10 +1301,32 @@ col_names1 = ["V0", "a", "b", "\u03C3", "MLE for V0", "MLE for a", "MLE for b"]
 
 # print(tabulate(data1, headers=col_names1, tablefmt="latex"))
 
+# Optimal Control Plot
+# mend1 = Mendelsohn(0.05, 1, 1, 0.5, 1)
+# mend1.plot_v_D(10, mend1.V0)
+
 # mend1.mend_sol_noise_plot([mend1.V0, mend1.a, mend1.b], [0.05, 0.2, 0.5])
 
 # mend1.plot([mend1.V0, mend1.a, mend1.b])
 
+mend1 = Mendelsohn(0.05, 1, 1, 0.5, 1)
+mend2 = Mendelsohn(0.05, 1, 5, 0.5, 1)
+mend3 = Mendelsohn(0.05, 1, 1, 0.95, 1)
+
+data = [[mend1.V0, mend1.a, mend1.b, 0.1, mend1.get_D(np.linspace(0,10,101), [mend1.V0, mend1.a, mend1.b], 0.1)],
+         [mend1.V0, mend1.a, mend1.b, 1, mend1.get_D(np.linspace(0,10,101), [mend1.V0, mend1.a, mend1.b], 1)],
+         [mend1.V0, mend1.a, mend1.b, 10, mend1.get_D(np.linspace(0,10,101), [mend1.V0, mend1.a, mend1.b], 10)],
+         [mend2.V0, mend2.a, mend2.b, 0.1, mend2.get_D(np.linspace(0,10,101), [mend2.V0, mend2.a, mend2.b], 0.1)],
+         [mend2.V0, mend2.a, mend2.b, 1, mend2.get_D(np.linspace(0,10,101), [mend2.V0, mend2.a, mend2.b], 1)],
+         [mend2.V0, mend2.a, mend2.b, 10, mend2.get_D(np.linspace(0,10,101), [mend2.V0, mend2.a, mend2.b], 10)],
+         [mend3.V0, mend3.a, mend3.b, 0.1, mend3.get_D(np.linspace(0,10,101), [mend3.V0, mend3.a, mend3.b], 0.1)],
+         [mend3.V0, mend3.a, mend3.b, 1, mend3.get_D(np.linspace(0,10,101), [mend3.V0, mend3.a, mend3.b], 1)],
+         [mend3.V0, mend3.a, mend3.b, 10, mend3.get_D(np.linspace(0,10,101), [mend3.V0, mend3.a, mend3.b], 10)]
+         ]
+
+col_names = ["V0", "a", "b", "c", "D*"]
+
+# print(tabulate(data, headers=col_names, tablefmt="latex"))
 #######################################################################################################################################
 
 # Logistic models with noise = 0.05 and varying r (Low Initial Volume)
@@ -1350,11 +1428,13 @@ col_names1 = ["V0", "r", "k", "\u03C3", "MLE for V0", "MLE for r", "MLE for k"]
 # print(tabulate(data1, headers=col_names1, tablefmt="latex"))
 
 # Logistic model with varying c
-# log1 = Logistic(0.05, 1, 1, 10, 0.1)
-# log2 = Logistic(0.05, 1, 1, 10, 1)
-# log3 = Logistic(0.05, 1, 1, 10, 10)
+log1 = Logistic(0.05, 1, 1, 10, 0.1)
+log2 = Logistic(0.05, 1, 7, 10, 1)
+log3 = Logistic(0.05, 1, 1, 10, 10)
 
 # log1.plot_v_D(log1.V0, 10, log1.c)
+# print(log2.get_p0(10, log2.V0))
+# log2.plot_res(10, log2.V0)
 # log2.plot_v_D(log2.V0, 10, log2.c)
 # log3.plot_v_D(log3.V0, 10, log3.c)
 
@@ -1362,6 +1442,25 @@ col_names1 = ["V0", "r", "k", "\u03C3", "MLE for V0", "MLE for r", "MLE for k"]
 # log1.log_sol_noise_plot([log1.V0, log1.r, log1.k], [0.05, 0.2, 0.5])
 
 # log1.plot([log1.V0, log1.r, log1.k])
+
+log1 = Logistic(0.05, 1, 1, 10, 1)
+log2 = Logistic(0.05, 1, 5, 10, 1)
+log3 = Logistic(0.05, 1, 1, 25, 1)
+
+data = [[log1.V0, log1.r, log1.k, 0.1, log1.get_D(np.linspace(0,10,101), [log1.V0, log1.r, log1.k], 0.1)],
+         [log1.V0, log1.r, log1.k, 1, log1.get_D(np.linspace(0,10,101), [log1.V0, log1.r, log1.k], 1)],
+         [log1.V0, log1.r, log1.k, 10, log1.get_D(np.linspace(0,10,101), [log1.V0, log1.r, log1.k], 10)],
+         [log2.V0, log2.r, log2.k, 0.1, log2.get_D(np.linspace(0,10,101), [log2.V0, log2.r, log2.k], 0.1)],
+         [log2.V0, log2.r, log2.k, 1, log2.get_D(np.linspace(0,10,101), [log2.V0, log2.r, log2.k], 1)],
+         [log2.V0, log2.r, log2.k, 10, log2.get_D(np.linspace(0,10,101), [log2.V0, log2.r, log2.k], 10)],
+         [log3.V0, log3.r, log3.k, 0.1, log3.get_D(np.linspace(0,10,101), [log3.V0, log3.r, log3.k], 0.1)],
+         [log3.V0, log3.r, log3.k, 1, log3.get_D(np.linspace(0,10,101), [log3.V0, log3.r, log3.k], 1)],
+         [log3.V0, log3.r, log3.k, 10, log3.get_D(np.linspace(0,10,101), [log3.V0, log3.r, log3.k], 10)]
+         ]
+
+col_names = ["V0", "r", "K", "c", "D*"]
+
+# print(tabulate(data, headers=col_names, tablefmt="latex"))
 
 #######################################################################################################################################
 
@@ -1463,15 +1562,34 @@ col_names1 = ["V0", "r", "k", "\u03C3", "MLE for V0", "MLE for r", "MLE for k"]
 # print(tabulate(data1, headers=col_names1, tablefmt="latex"))
 
 # Gompertz model with varying c
-# gomp1 = Gompertz(0.05, 1, 1, 10)
+gomp1 = Gompertz(0.05, 1, 5, 10)
 
 # gomp1.plot_v_D(gomp1.V0, gomp1.r, gomp1.k, 10, 0.1)
-# gomp2.plot_v_D(gomp2.V0, gomp2.r, gomp2.k, 10, 1)
+# gomp1.plot_v_D(gomp1.V0, gomp1.r, gomp1.k, 10, 1)
 # gomp3.plot_v_D(gomp3.V0, gomp3.r, gomp3.k, 10, 10)
 
 # gomp1.gomp_sol_noise_plot([gomp1.V0, gomp1.r, gomp1.k], [0.05, 0.2, 0.5])
 
 # gomp1.plot([gomp1.V0, gomp1.r, gomp1.k])
+
+gomp1 = Gompertz(0.05, 1, 1, 10)
+gomp2 = Gompertz(0.05, 1, 5, 10)
+gomp3 = Gompertz(0.05, 1, 1, 25)
+
+data = [[gomp1.V0, gomp1.r, gomp1.k, 0.1, gomp1.get_D(np.linspace(0,10,101), [gomp1.V0, gomp1.r, gomp1.k], 0.1)],
+         [gomp1.V0, gomp1.r, gomp1.k, 1, gomp1.get_D(np.linspace(0,10,101), [gomp1.V0, gomp1.r, gomp1.k], 1)],
+         [gomp1.V0, gomp1.r, gomp1.k, 10, gomp1.get_D(np.linspace(0,10,101), [gomp1.V0, gomp1.r, gomp1.k], 10)],
+         [gomp2.V0, gomp2.r, gomp2.k, 0.1, gomp2.get_D(np.linspace(0,10,101), [gomp2.V0, gomp2.r, gomp2.k], 0.1)],
+         [gomp2.V0, gomp2.r, gomp2.k, 1, gomp2.get_D(np.linspace(0,10,101), [gomp2.V0, gomp2.r, gomp2.k], 1)],
+         [gomp2.V0, gomp2.r, gomp2.k, 10, gomp2.get_D(np.linspace(0,10,101), [gomp2.V0, gomp2.r, gomp2.k], 10)],
+         [gomp3.V0, gomp3.r, gomp3.k, 0.1, gomp3.get_D(np.linspace(0,10,101), [gomp3.V0, gomp3.r, gomp3.k], 0.1)],
+         [gomp3.V0, gomp3.r, gomp3.k, 1, gomp3.get_D(np.linspace(0,10,101), [gomp3.V0, gomp3.r, gomp3.k], 1)],
+         [gomp3.V0, gomp3.r, gomp3.k, 10, gomp3.get_D(np.linspace(0,10,101), [gomp3.V0, gomp3.r, gomp3.k], 10)]
+         ]
+
+col_names = ["V0", "r", "K", "c", "D*"]
+
+# print(tabulate(data, headers=col_names, tablefmt="latex"))
 
 #######################################################################################################################################
 
@@ -1535,12 +1653,13 @@ col_names1 = ["V0", "b", "d", "\u03C3", "MLE for V0", "MLE for b", "MLE for d"]
 
 # Bertalanffy model with varying c
 bert1 = Bertalanffy(0.05, 1, 2, 1, 0.1)
-bert2 = Bertalanffy(0.05, 1, 2, 1, 1)
+bert2 = Bertalanffy(0.05, 1, 10, 1, 1)
 bert3 = Bertalanffy(0.05, 1, 2, 1, 10)
 
 # print(bert1.get_v(10, bert1.V0))
 
 # bert1.plot_v_D(bert1.V0, 10, bert1.c)
+# bert2.plot_res(10, bert2.V0)
 # bert2.plot_v_D(bert2.V0, 10, bert2.c)
 # bert3.plot_v_D(bert3.V0, 10, bert3.c)
 
@@ -1548,7 +1667,24 @@ bert3 = Bertalanffy(0.05, 1, 2, 1, 10)
 
 # bert1.plot([bert1.V0, bert1.b, bert1.d])
 
+bert1 = Bertalanffy(0.05, 1, 2, 1, 1)
+bert2 = Bertalanffy(0.05, 1, 5, 1, 1)
+bert3 = Bertalanffy(0.05, 0.01, 5, 1, 1)
 
+data = [[bert1.V0, bert1.b, bert1.d, 0.1, bert1.get_D(np.linspace(0,10,101), [bert1.V0, bert1.b, bert1.d], 0.1)],
+         [bert1.V0, bert1.b, bert1.d, 1, bert1.get_D(np.linspace(0,10,101), [bert1.V0, bert1.b, bert1.d], 1)],
+         [bert1.V0, bert1.b, bert1.d, 10, bert1.get_D(np.linspace(0,10,101), [bert1.V0, bert1.b, bert1.d], 10)],
+         [bert2.V0, bert2.b, bert2.d, 0.1, bert2.get_D(np.linspace(0,10,101), [bert2.V0, bert2.b, bert2.d], 0.1)],
+         [bert2.V0, bert2.b, bert2.d, 1, bert2.get_D(np.linspace(0,10,101), [bert2.V0, bert2.b, bert2.d], 1)],
+         [bert2.V0, bert2.b, bert2.d, 10, bert2.get_D(np.linspace(0,10,101), [bert2.V0, bert2.b, bert2.d], 10)],
+         [bert3.V0, bert3.b, bert3.d, 0.1, bert3.get_D(np.linspace(0,10,101), [bert3.V0, bert3.b, bert3.d], 0.1)],
+         [bert3.V0, bert3.b, bert3.d, 1, bert3.get_D(np.linspace(0,10,101), [bert3.V0, bert3.b, bert3.d], 1)],
+         [bert3.V0, bert3.b, bert3.d, 10, bert3.get_D(np.linspace(0,10,101), [bert3.V0, bert3.b, bert3.d], 10)]
+         ]
+
+col_names = ["V0", "b", "d", "c", "D*"]
+
+# print(tabulate(data, headers=col_names, tablefmt="latex"))
 
 
 
