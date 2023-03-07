@@ -95,15 +95,15 @@ class Exponential:
         if param == "a":
             def test(a):
                 return -mle.fun - self.log_l([mle.x[0], a], self.noise) - chi2.ppf(confidence, df)/2
-            root1 = root_scalar(test, x0 = mle.x[1], x1 = 0.8*mle.x[1])
-            root2 = root_scalar(test, x0 = mle.x[1], x1 = 1.2*mle.x[1])
+            root1 = root_scalar(test, x0 = 0.99*mle.x[1], x1 = 0.8*mle.x[1])
+            root2 = root_scalar(test, x0 = 1.01*mle.x[1], x1 = 1.2*mle.x[1])
             CI = [min(root1.root, root2.root), max(root1.root, root2.root)]
             return CI
         elif param == "V0":
             def test(V0):
                 return -mle.fun - self.log_l([V0, mle.x[1]], self.noise) - chi2.ppf(confidence, df)/2            
-            root1 = root_scalar(test, x0 = 0.99*mle.x[0], x1 = 0.8*mle.x[0])
-            root2 = root_scalar(test, x0 = 1.01*mle.x[0], x1 = 1.2*mle.x[0])
+            root1 = root_scalar(test, x0 = 0.9*mle.x[0], x1 = 0.8*mle.x[0])
+            root2 = root_scalar(test, x0 = 1.1*mle.x[0], x1 = 1.2*mle.x[0])
             CI = [min(root1.root, root2.root), max(root1.root, root2.root)]
             return CI
         else:
@@ -504,8 +504,8 @@ class Logistic:
         elif param == "K" or "k":
             def test(K):
                 return -mle.fun - self.log_l([mle.x[0], mle.x[1], K], self.noise) - chi2.ppf(confidence, df)/2
-            root1 = root_scalar(test, x0 = 0.5*mle.x[2], x1 = 0.9*mle.x[2])
-            root2 = root_scalar(test, x0 = 1.5*mle.x[2], x1 = 1.1*mle.x[2])
+            root1 = root_scalar(test, x0 = 0.2*mle.x[2], x1 = 0.9*mle.x[2])
+            root2 = root_scalar(test, x0 = 5*mle.x[2], x1 = 1.1*mle.x[2])
             CI = [min(root1.root, root2.root), max(root1.root, root2.root)]
             return CI
         elif param == "V0":
@@ -1038,40 +1038,40 @@ exp15 = Exponential(0.05, 10, 20)
 
 # Table: noise = 0.05
 # Create data
-data1 = [[exp1.V0, exp1.a, exp1.exp_CI([0.01,1], 0.95, "V0"), exp1.exp_CI([0.01,1], 0.99, "V0")],
-        [exp2.V0, exp2.a, exp2.exp_CI([0.01,2], 0.95, "V0"), exp2.exp_CI([0.01,2], 0.99, "V0")],
-        [exp3.V0, exp3.a, exp3.exp_CI([0.01,5], 0.95, "V0"), exp3.exp_CI([0.01,5], 0.99, "V0")],
-        [exp4.V0, exp4.a, exp4.exp_CI([0.01,10], 0.95, "V0"), exp4.exp_CI([0.01,10], 0.99, "V0")],
-        [exp5.V0, exp5.a, exp5.exp_CI([0.01,20], 0.95, "V0"), exp5.exp_CI([0.01,20], 0.99, "V0")]
+data1 = [[exp1.V0, exp1.a, np.around(exp1.exp_CI([0.01,1], 0.95, "V0"), 6), np.around(exp1.exp_CI([0.01,1], 0.99, "V0"), 6)],
+        [exp2.V0, exp2.a, np.around(exp2.exp_CI([0.01,2], 0.95, "V0"), 6), np.around(exp2.exp_CI([0.01,2], 0.99, "V0"), 6)],
+        [exp3.V0, exp3.a, np.around(exp3.exp_CI([0.01,5], 0.95, "V0"), 6), np.around(exp3.exp_CI([0.01,5], 0.99, "V0"), 6)],
+        [exp4.V0, exp4.a, np.around(exp4.exp_CI([0.01,10], 0.95, "V0"), 6), np.around(exp4.exp_CI([0.01,10], 0.99, "V0"), 6)],
+        [exp5.V0, exp5.a, np.around(exp5.exp_CI([0.01,20], 0.95, "V0"), 6), np.around(exp5.exp_CI([0.01,20], 0.99, "V0"), 6)]
         ]
-data2 = [[exp1.V0, exp1.a, exp1.exp_CI([0.01,1], 0.95, "a"), exp1.exp_CI([0.01,1], 0.99, "a")],
-        [exp2.V0, exp2.a, exp2.exp_CI([0.01,2], 0.95, "a"), exp2.exp_CI([0.01,2], 0.99, "a")],
-        [exp3.V0, exp3.a, exp3.exp_CI([0.01,5], 0.95, "a"), exp3.exp_CI([0.01,5], 0.99, "a")],
-        [exp4.V0, exp4.a, exp4.exp_CI([0.01,10], 0.95, "a"), exp4.exp_CI([0.01,10], 0.99, "a")],
-        [exp5.V0, exp5.a, exp5.exp_CI([0.01,20], 0.95, "a"), exp5.exp_CI([0.01,20], 0.99, "a")]
+data2 = [[exp1.V0, exp1.a, np.around(exp1.exp_CI([0.01,1], 0.95, "a"), 6), np.around(exp1.exp_CI([0.01,1], 0.99, "a"), 6)],
+        [exp2.V0, exp2.a, np.around(exp2.exp_CI([0.01,2], 0.95, "a"), 6), np.around(exp2.exp_CI([0.01,2], 0.99, "a"), 6)],
+        [exp3.V0, exp3.a, np.around(exp3.exp_CI([0.01,5], 0.95, "a"), 6), np.around(exp3.exp_CI([0.01,5], 0.99, "a"), 6)],
+        [exp4.V0, exp4.a, np.around(exp4.exp_CI([0.01,10], 0.95, "a"), 6), np.around(exp4.exp_CI([0.01,10], 0.99, "a"), 6)],
+        [exp5.V0, exp5.a, np.around(exp5.exp_CI([0.01,20], 0.95, "a"), 6), np.around(exp5.exp_CI([0.01,20], 0.99, "a"), 6)]
         ]
-data3 = [[exp6.V0, exp6.a, exp6.exp_CI([1,1], 0.95, "V0"), exp6.exp_CI([1,1], 0.99, "V0")],
-        [exp7.V0, exp7.a, exp7.exp_CI([1,2], 0.95, "V0"), exp7.exp_CI([1,2], 0.99, "V0")],
-        [exp8.V0, exp8.a, exp8.exp_CI([1,5], 0.95, "V0"), exp8.exp_CI([1,5], 0.99, "V0")],
-        [exp9.V0, exp9.a, exp9.exp_CI([1,10], 0.95, "V0"), exp9.exp_CI([1,10], 0.99, "V0")],
-        [exp10.V0, exp10.a, exp10.exp_CI([1,20], 0.95, "V0"), exp10.exp_CI([1,20], 0.99, "V0")]
+data3 = [[exp6.V0, exp6.a, np.around(exp6.exp_CI([1,1], 0.95, "V0"), 6), np.around(exp6.exp_CI([1,1], 0.99, "V0"), 6)],
+        [exp7.V0, exp7.a, np.around(exp7.exp_CI([1,2], 0.95, "V0"), 6), np.around(exp7.exp_CI([1,2], 0.99, "V0"), 6)],
+        [exp8.V0, exp8.a, np.around(exp8.exp_CI([1,5], 0.95, "V0"), 6), np.around(exp8.exp_CI([1,5], 0.99, "V0"), 6)],
+        [exp9.V0, exp9.a, np.around(exp9.exp_CI([1,10], 0.95, "V0"), 6), np.around(exp9.exp_CI([1,10], 0.99, "V0"), 6)],
+        [exp10.V0, exp10.a, np.around(exp10.exp_CI([1,20], 0.95, "V0"), 6), np.around(exp10.exp_CI([1,20], 0.99, "V0"), 6)]
         ]
-data4 = [[exp6.V0, exp6.a, exp6.exp_CI([1,1], 0.95, "a"), exp6.exp_CI([1,1], 0.99, "a")],
-        [exp7.V0, exp7.a, exp7.exp_CI([1,2], 0.95, "a"), exp7.exp_CI([1,2], 0.99, "a")],
-        [exp8.V0, exp8.a, exp8.exp_CI([1,5], 0.95, "a"), exp8.exp_CI([1,5], 0.99, "a")],
-        [exp9.V0, exp9.a, exp9.exp_CI([1,10], 0.95, "a"), exp9.exp_CI([1,10], 0.99, "a")],
-        [exp10.V0, exp10.a, exp10.exp_CI([1,20], 0.95, "a"), exp10.exp_CI([1,20], 0.99, "a")]
+data4 = [[exp6.V0, exp6.a, np.around(exp6.exp_CI([1,1], 0.95, "a"), 6), np.around(exp6.exp_CI([1,1], 0.99, "a"), 6)],
+        [exp7.V0, exp7.a, np.around(exp7.exp_CI([1,2], 0.95, "a"), 6), np.around(exp7.exp_CI([1,2], 0.99, "a"), 6)],
+        [exp8.V0, exp8.a, np.around(exp8.exp_CI([1,5], 0.95, "a"), 6), np.around(exp8.exp_CI([1,5], 0.99, "a"), 6)],
+        [exp9.V0, exp9.a, np.around(exp9.exp_CI([1,10], 0.95, "a"), 6), np.around(exp9.exp_CI([1,10], 0.99, "a"), 6)],
+        [exp10.V0, exp10.a, np.around(exp10.exp_CI([1,20], 0.95, "a"), 6), np.around(exp10.exp_CI([1,20], 0.99, "a"), 6)]
         ]
 # Define header names
 col_names1 = ["V0", "a", "95% Confidence Interval for V0", "99% Confidence Interval for V0"]
 col_names2 = ["V0", "a", "95% Confidence Interval for a", "99% Confidence Interval for a"]
 
-#print(tabulate(data1, headers=col_names1, tablefmt="latex"))
-#print(tabulate(data2, headers=col_names2, tablefmt="latex"))
+# print(tabulate(data1, headers=col_names1, tablefmt="latex"))
+# print(tabulate(data2, headers=col_names2, tablefmt="latex"))
 # print(tabulate(data3, headers=col_names1, tablefmt="latex"))
 # print(tabulate(data4, headers=col_names2, tablefmt="latex"))
 
-
+# print(exp1.exp_CI([0.01,1], 0.99, "a"))
 # Exponential Models with noise = 0.2, V0 = 0.01 and varying a
 exp1 = Exponential(0.2, 0.01, 1)
 exp2 = Exponential(0.2, 0.01, 2)
@@ -1151,29 +1151,29 @@ exp15 = Exponential(0.5, 10, 20)
 
 # Table: noise = 0.5
 # Create data
-data1 = [[exp1.V0, exp1.a, exp1.exp_CI([0.01,1], 0.95, "V0"), exp1.exp_CI([0.01,1], 0.99, "V0")],
-        [exp2.V0, exp2.a, exp2.exp_CI([0.01,2], 0.95, "V0"), exp2.exp_CI([0.01,2], 0.99, "V0")],
-        [exp3.V0, exp3.a, exp3.exp_CI([0.01,5], 0.95, "V0"), exp3.exp_CI([0.01,5], 0.99, "V0")],
-        [exp4.V0, exp4.a, exp4.exp_CI([0.01,10], 0.95, "V0"), exp4.exp_CI([0.01,10], 0.99, "V0")],
-        [exp5.V0, exp5.a, exp5.exp_CI([0.01,20], 0.95, "V0"), exp5.exp_CI([0.01,20], 0.99, "V0")]
+data1 = [[exp1.V0, exp1.a, np.around(exp1.exp_CI([0.01,1], 0.95, "V0"), 6), np.around(exp1.exp_CI([0.01,1], 0.99, "V0"), 6)],
+        [exp2.V0, exp2.a, np.around(exp2.exp_CI([0.01,2], 0.95, "V0"), 6), np.around(exp2.exp_CI([0.01,2], 0.99, "V0"), 6)],
+        [exp3.V0, exp3.a, np.around(exp3.exp_CI([0.01,5], 0.95, "V0"), 6), np.around(exp3.exp_CI([0.01,5], 0.99, "V0"), 6)],
+        [exp4.V0, exp4.a, np.around(exp4.exp_CI([0.01,10], 0.95, "V0"), 6), np.around(exp4.exp_CI([0.01,10], 0.99, "V0"), 6)],
+        [exp5.V0, exp5.a, np.around(exp5.exp_CI([0.01,20], 0.95, "V0"), 6), np.around(exp5.exp_CI([0.01,20], 0.99, "V0"), 6)]
         ]
-data2 = [[exp1.V0, exp1.a, exp1.exp_CI([0.01,1], 0.95, "a"), exp1.exp_CI([0.01,1], 0.99, "a")],
-        [exp2.V0, exp2.a, exp2.exp_CI([0.01,2], 0.95, "a"), exp2.exp_CI([0.01,2], 0.99, "a")],
-        [exp3.V0, exp3.a, exp3.exp_CI([0.01,5], 0.95, "a"), exp3.exp_CI([0.01,5], 0.99, "a")],
-        [exp4.V0, exp4.a, exp4.exp_CI([0.01,10], 0.95, "a"), exp4.exp_CI([0.01,10], 0.99, "a")],
-        [exp5.V0, exp5.a, exp5.exp_CI([0.01,20], 0.95, "a"), exp5.exp_CI([0.01,20], 0.99, "a")]
+data2 = [[exp1.V0, exp1.a, np.around(exp1.exp_CI([0.01,1], 0.95, "a"), 6), np.around(exp1.exp_CI([0.01,1], 0.99, "a"), 6)],
+        [exp2.V0, exp2.a, np.around(exp2.exp_CI([0.01,2], 0.95, "a"), 6), np.around(exp2.exp_CI([0.01,2], 0.99, "a"), 6)],
+        [exp3.V0, exp3.a, np.around(exp3.exp_CI([0.01,5], 0.95, "a"), 6), np.around(exp3.exp_CI([0.01,5], 0.99, "a"), 6)],
+        [exp4.V0, exp4.a, np.around(exp4.exp_CI([0.01,10], 0.95, "a"), 6), np.around(exp4.exp_CI([0.01,10], 0.99, "a"), 6)],
+        [exp5.V0, exp5.a, np.around(exp5.exp_CI([0.01,20], 0.95, "a"), 6), np.around(exp5.exp_CI([0.01,20], 0.99, "a"), 6)]
         ]
-data3 = [[exp6.V0, exp6.a, exp6.exp_CI([1,1], 0.95, "V0"), exp6.exp_CI([1,1], 0.99, "V0")],
-        [exp7.V0, exp7.a, exp7.exp_CI([1,2], 0.95, "V0"), exp7.exp_CI([1,2], 0.99, "V0")],
-        [exp8.V0, exp8.a, exp8.exp_CI([1,5], 0.95, "V0"), exp8.exp_CI([1,5], 0.99, "V0")],
-        [exp9.V0, exp9.a, exp9.exp_CI([1,10], 0.95, "V0"), exp9.exp_CI([1,10], 0.99, "V0")],
-        [exp10.V0, exp10.a, exp10.exp_CI([1,20], 0.95, "V0"), exp10.exp_CI([1,20], 0.99, "V0")]
+data3 = [[exp6.V0, exp6.a, np.around(exp6.exp_CI([1,1], 0.95, "V0"), 6), np.around(exp6.exp_CI([1,1], 0.99, "V0"), 6)],
+        [exp7.V0, exp7.a, np.around(exp7.exp_CI([1,2], 0.95, "V0"), 6), np.around(exp7.exp_CI([1,2], 0.99, "V0"), 6)],
+        [exp8.V0, exp8.a, np.around(exp8.exp_CI([1,5], 0.95, "V0"), 6), np.around(exp8.exp_CI([1,5], 0.99, "V0"), 6)],
+        [exp9.V0, exp9.a, np.around(exp9.exp_CI([1,10], 0.95, "V0"), 6), np.around(exp9.exp_CI([1,10], 0.99, "V0"), 6)],
+        [exp10.V0, exp10.a, np.around(exp10.exp_CI([1,20], 0.95, "V0"), 6), np.around(exp10.exp_CI([1,20], 0.99, "V0"), 6)]
         ]
-data4 = [[exp6.V0, exp6.a, exp6.exp_CI([1,1], 0.95, "a"), exp6.exp_CI([1,1], 0.99, "a")],
-        [exp7.V0, exp7.a, exp7.exp_CI([1,2], 0.95, "a"), exp7.exp_CI([1,2], 0.99, "a")],
-        [exp8.V0, exp8.a, exp8.exp_CI([1,5], 0.95, "a"), exp8.exp_CI([1,5], 0.99, "a")],
-        [exp9.V0, exp9.a, exp9.exp_CI([1,10], 0.95, "a"), exp9.exp_CI([1,10], 0.99, "a")],
-        [exp10.V0, exp10.a, exp10.exp_CI([1,20], 0.95, "a"), exp10.exp_CI([1,20], 0.99, "a")]
+data4 = [[exp6.V0, exp6.a, np.around(exp6.exp_CI([1,1], 0.95, "a"), 6), np.around(exp6.exp_CI([1,1], 0.99, "a"), 6)],
+        [exp7.V0, exp7.a, np.around(exp7.exp_CI([1,2], 0.95, "a"), 6), np.around(exp7.exp_CI([1,2], 0.99, "a"), 6)],
+        [exp8.V0, exp8.a, np.around(exp8.exp_CI([1,5], 0.95, "a"), 6), np.around(exp8.exp_CI([1,5], 0.99, "a"), 6)],
+        [exp9.V0, exp9.a, np.around(exp9.exp_CI([1,10], 0.95, "a"), 6), np.around(exp9.exp_CI([1,10], 0.99, "a"), 6)],
+        [exp10.V0, exp10.a, np.around(exp10.exp_CI([1,20], 0.95, "a"), 6), np.around(exp10.exp_CI([1,20], 0.99, "a"), 6)]
         ]
 # Define header names
 col_names1 = ["V0", "a", "95% Confidence Interval for V0", "99% Confidence Interval for V0"]
@@ -1202,8 +1202,8 @@ col_names1 = ["V0", "a", "\u03C3", "MLE for V0", "MLE for a"]
 # print(tabulate(data1, headers=col_names1, tablefmt="latex"))
 
 # Optimal Control Plot
-# exp1 = Exponential(0.05, 1, 1)
-# exp1.plot_v_D(exp1.V0, exp1.a, 10, 1)
+exp1 = Exponential(0.05, 0.01, 1)
+exp1.plot_v_D(exp1.V0, exp1.a, 10, 0.1)
 
 # exp1.exp_sol_noise_plot([exp1.V0, 0.2], [0.05, 0.2, 0.5])
 
@@ -1239,24 +1239,24 @@ col_names = ["V0", "a", "c", "D*"]
 # Mendelsohn models with noise = 0.05 and varying b
 mend1 = Mendelsohn(0.05, 0.01, 1, 0.1, 1)
 mend2 = Mendelsohn(0.05, 0.01, 1, 0.5, 1)
-mend3 = Mendelsohn(0.05, 0.01, 1, 2, 1)
-mend4 = Mendelsohn(0.05, 0.01, 1, 2.5, 1)
+mend3 = Mendelsohn(0.05, 0.01, 1, 0.95, 1)
+mend4 = Mendelsohn(0.05, 0.01, 1, 2, 1)
 
-data1 = [[mend1.V0, mend1.a, mend1.b, mend1.mend_CI([0.01, 1, 0.1], 0.95, "b"), mend1.mend_CI([0.01, 1, 0.1], 0.99, "b")],
-         [mend2.V0, mend2.a, mend2.b, mend2.mend_CI([0.01, 1, 0.5], 0.95, "b"), mend2.mend_CI([0.01, 1, 0.5], 0.99, "b")],
-         [mend3.V0, mend3.a, mend3.b, mend3.mend_CI([0.01, 1, 2], 0.95, "b"), mend3.mend_CI([0.01, 1, 2], 0.99, "b")],
-         [mend4.V0, mend4.a, mend4.b, mend4.mend_CI([0.01, 1, 2.5], 0.95, "b"), mend4.mend_CI([0.01, 1, 2.5], 0.99, "b")]
+data1 = [[mend1.V0, mend1.a, mend1.b, np.around(mend1.mend_CI([0.01, 1, 0.1], 0.95, "b"), 6), np.around(mend1.mend_CI([0.01, 1, 0.1], 0.99, "b"), 6)],
+         [mend2.V0, mend2.a, mend2.b, np.around(mend2.mend_CI([0.01, 1, 0.5], 0.95, "b"), 6), np.around(mend2.mend_CI([0.01, 1, 0.5], 0.99, "b"), 6)],
+         [mend3.V0, mend3.a, mend3.b, np.around(mend3.mend_CI([0.01, 1, 2], 0.95, "b"), 6), np.around(mend3.mend_CI([0.01, 1, 2], 0.99, "b"), 6)],
+         [mend4.V0, mend4.a, mend4.b, np.around(mend4.mend_CI([0.01, 1, 2.5], 0.95, "b"), 6), np.around(mend4.mend_CI([0.01, 1, 2.5], 0.99, "b"), 6)]
          ]
 
 col_names1 = ["V0", "a", "b", "95% Confidence Interval for b", "99% Confidence Interval for b"]
 
-#print(tabulate(data1, headers=col_names1, tablefmt="latex"))
+# print(tabulate(data1, headers=col_names1, tablefmt="latex"))
 
 # Mendelsohn models with noise = 0.2 and varying b
 mend5 = Mendelsohn(0.2, 0.01, 1, 0.1, 1)
 mend6 = Mendelsohn(0.2, 0.01, 1, 0.5, 1)
-mend7 = Mendelsohn(0.2, 0.01, 1, 2, 1)
-mend8 = Mendelsohn(0.2, 0.01, 1, 2.5, 1)
+mend7 = Mendelsohn(0.2, 0.01, 1, 0.95, 1)
+mend8 = Mendelsohn(0.2, 0.01, 1, 2, 1)
 
 data1 = [[mend5.V0, mend5.a, mend5.b, mend5.mend_CI([0.01, 1, 0.1], 0.95, "b"), mend5.mend_CI([0.01, 1, 0.1], 0.99, "b")],
          [mend6.V0, mend6.a, mend6.b, mend6.mend_CI([0.01, 1, 0.5], 0.95, "b"), mend6.mend_CI([0.01, 1, 0.5], 0.99, "b")],
@@ -1271,18 +1271,18 @@ col_names1 = ["V0", "a", "b", "95% Confidence Interval for b", "99% Confidence I
 # Mendelsohn models with noise = 0.2 and varying b
 mend9 = Mendelsohn(0.5, 0.01, 1, 0.1, 1)
 mend10 = Mendelsohn(0.5, 0.01, 1, 0.5, 1)
-mend11 = Mendelsohn(0.5, 0.01, 1, 2, 1)
-mend12 = Mendelsohn(0.5, 0.01, 1, 2.5, 1)
+mend11 = Mendelsohn(0.5, 0.01, 1, 0.95, 1)
+mend12 = Mendelsohn(0.5, 0.01, 1, 2, 1)
 
-data1 = [[mend9.V0, mend9.a, mend9.b, mend9.mend_CI([0.01, 1, 0.1], 0.95, "b"), mend9.mend_CI([0.01, 1, 0.1], 0.99, "b")],
-         [mend10.V0, mend10.a, mend10.b, mend10.mend_CI([0.01, 1, 0.5], 0.95, "b"), mend10.mend_CI([0.01, 1, 0.5], 0.99, "b")],
-         [mend11.V0, mend11.a, mend11.b, mend11.mend_CI([0.01, 1, 2], 0.95, "b"), mend11.mend_CI([0.01, 1, 2], 0.99, "b")],
-         [mend12.V0, mend12.a, mend12.b, mend12.mend_CI([0.01, 1, 2.5], 0.95, "b"), mend12.mend_CI([0.01, 1, 2.5], 0.99, "b")]
+data1 = [[mend9.V0, mend9.a, mend9.b, np.around(mend9.mend_CI([0.01, 1, 0.1], 0.95, "b"), 6), np.around(mend9.mend_CI([0.01, 1, 0.1], 0.99, "b"), 6)],
+         [mend10.V0, mend10.a, mend10.b, np.around(mend10.mend_CI([0.01, 1, 0.5], 0.95, "b"), 6), np.around(mend10.mend_CI([0.01, 1, 0.5], 0.99, "b"), 6)],
+         [mend11.V0, mend11.a, mend11.b, np.around(mend11.mend_CI([0.01, 1, 2], 0.95, "b"), 6), np.around(mend11.mend_CI([0.01, 1, 2], 0.99, "b"), 6)],
+         [mend12.V0, mend12.a, mend12.b, np.around(mend12.mend_CI([0.01, 1, 2.5], 0.95, "b"), 6), np.around(mend12.mend_CI([0.01, 1, 2.5], 0.99, "b"), 6)]
          ]
 
 col_names1 = ["V0", "a", "b", "95% Confidence Interval for b", "99% Confidence Interval for b"]
 
-#print(tabulate(data1, headers=col_names1, tablefmt="latex"))
+# print(tabulate(data1, headers=col_names1, tablefmt="latex"))
 
 # Mendelsohn model with varying noise
 mend1 = Mendelsohn(0.05, 1, 1, 0.5, 1)
@@ -1337,26 +1337,28 @@ log4 = Logistic(0.05, 0.01, 5, 10, 1)
 log5 = Logistic(0.05, 0.01, 25, 10, 1)
 log6 = Logistic(0.05, 0.01, 100, 10, 1)
 
-data1 = [[log1.V0, log1.r, log1.k, log1.log_CI([0.01, 0.1, 10], 0.95, "r"), log1.log_CI([0.01, 0.1, 10], 0.99, "r")],
-         [log2.V0, log2.r, log2.k, log2.log_CI([0.01, 0.5, 10], 0.95, "r"), log2.log_CI([0.01, 0.5, 10], 0.99, "r")],
-         [log3.V0, log3.r, log3.k, log3.log_CI([0.01, 1, 10], 0.95, "r"), log3.log_CI([0.01, 1, 10], 0.99, "r")],
-         [log4.V0, log4.r, log4.k, log4.log_CI([0.01, 5, 10], 0.95, "r"), log4.log_CI([0.01, 5, 10], 0.99, "r")],
-         [log5.V0, log5.r, log5.k, log5.log_CI([0.01, 25, 10], 0.95, "r"), log5.log_CI([0.01, 25, 10], 0.99, "r")],
-         [log6.V0, log6.r, log6.k, log6.log_CI([0.01, 100, 10], 0.95, "r"), log6.log_CI([0.01, 100, 10], 0.99, "r")]
+data1 = [[log1.V0, log1.r, log1.k, np.around(log1.log_CI([0.01, 0.1, 10], 0.95, "r"), 6), np.around(log1.log_CI([0.01, 0.1, 10], 0.99, "r"), 6)],
+         [log2.V0, log2.r, log2.k, np.around(log2.log_CI([0.01, 0.5, 10], 0.95, "r"), 6), np.around(log2.log_CI([0.01, 0.5, 10], 0.99, "r"), 6)],
+         [log3.V0, log3.r, log3.k, np.around(log3.log_CI([0.01, 1, 10], 0.95, "r"), 6), np.around(log3.log_CI([0.01, 1, 10], 0.99, "r"), 6)],
+         [log4.V0, log4.r, log4.k, np.around(log4.log_CI([0.01, 5, 10], 0.95, "r"), 6), np.around(log4.log_CI([0.01, 5, 10], 0.99, "r"), 6)],
+         [log5.V0, log5.r, log5.k, np.around(log5.log_CI([0.01, 25, 10], 0.95, "r"), 6), np.around(log5.log_CI([0.01, 25, 10], 0.99, "r"), 6)],
+         [log6.V0, log6.r, log6.k, np.around(log6.log_CI([0.01, 100, 10], 0.95, "r"), 6), np.around(log6.log_CI([0.01, 100, 10], 0.99, "r"), 6)]
          ]
-data2 = [[log1.V0, log1.r, log1.k, log1.log_CI([0.01, 0.1, 10], 0.95, "K"), log1.log_CI([0.01, 0.1, 10], 0.99, "K")],
-         [log2.V0, log2.r, log2.k, log2.log_CI([0.01, 0.5, 10], 0.95, "K"), log2.log_CI([0.01, 0.5, 10], 0.99, "K")],
-         [log3.V0, log3.r, log3.k, log3.log_CI([0.01, 1, 10], 0.95, "K"), log3.log_CI([0.01, 1, 10], 0.99, "K")],
-         [log4.V0, log4.r, log4.k, log4.log_CI([0.01, 5, 10], 0.95, "K"), log4.log_CI([0.01, 5, 10], 0.99, "K")],
-         [log5.V0, log5.r, log5.k, log5.log_CI([0.01, 25, 10], 0.95, "K"), log5.log_CI([0.01, 25, 10], 0.99, "K")],
-         [log6.V0, log6.r, log6.k, log6.log_CI([0.01, 100, 10], 0.95, "K"), log6.log_CI([0.01, 100, 10], 0.99, "K")]
+data2 = [[log1.V0, log1.r, log1.k, np.around(log1.log_CI([0.01, 0.1, 10], 0.95, "K"), 6), np.around(log1.log_CI([0.01, 0.1, 10], 0.99, "K"), 6)],
+         [log2.V0, log2.r, log2.k, np.around(log2.log_CI([0.01, 0.5, 10], 0.95, "K"), 6), np.around(log2.log_CI([0.01, 0.5, 10], 0.99, "K"), 6)],
+         [log3.V0, log3.r, log3.k, np.around(log3.log_CI([0.01, 1, 10], 0.95, "K"), 6), np.around(log3.log_CI([0.01, 1, 10], 0.99, "K"), 6)],
+         [log4.V0, log4.r, log4.k, np.around(log4.log_CI([0.01, 5, 10], 0.95, "K"), 6), np.around(log4.log_CI([0.01, 5, 10], 0.99, "K"), 6)],
+         [log5.V0, log5.r, log5.k, np.around(log5.log_CI([0.01, 25, 10], 0.95, "K"), 6), np.around(log5.log_CI([0.01, 25, 10], 0.99, "K"), 6)],
+         [log6.V0, log6.r, log6.k, np.around(log6.log_CI([0.01, 100, 10], 0.95, "K"), 6), np.around(log6.log_CI([0.01, 100, 10], 0.99, "K"), 6)]
          ]
 
 col_names1 = ["V0", "r", "k", "95% Confidence Interval for r", "99% Confidence Interval for r"]
 col_names2 = ["V0", "r", "k", "95% Confidence Interval for k", "99% Confidence Interval for k"]
 
-#print(tabulate(data1, headers=col_names1, tablefmt="latex"))
-#print(tabulate(data2, headers=col_names2, tablefmt="latex"))
+# print(tabulate(data1, headers=col_names1, tablefmt="latex"))
+# print(tabulate(data2, headers=col_names2, tablefmt="latex"))
+
+# print(log1.log_CI([0.01, 0.1, 10], 0.95, "K"))
 
 
 # Logistic models with noise = 0.05 and varying k (Low Initial Volume)
@@ -1367,19 +1369,19 @@ log4 = Logistic(0.05, 0.01, 1, 25, 1)
 log5 = Logistic(0.05, 0.01, 1, 100, 1)
 log6 = Logistic(0.05, 0.01, 1, 1000, 1)
 
-data1 = [[log1.V0, log1.r, log1.k, log1.log_CI([0.01, 1, 1], 0.95, "r"), log1.log_CI([0.01, 1, 1], 0.99, "r")],
-         [log2.V0, log2.r, log2.k, log2.log_CI([0.01, 1, 5], 0.95, "r"), log2.log_CI([0.01, 1, 5], 0.99, "r")],
-         [log3.V0, log3.r, log3.k, log3.log_CI([0.01, 1, 10], 0.95, "r"), log3.log_CI([0.01, 1, 10], 0.99, "r")],
-         [log4.V0, log4.r, log4.k, log4.log_CI([0.01, 1, 25], 0.95, "r"), log4.log_CI([0.01, 1, 25], 0.99, "r")],
-         [log5.V0, log5.r, log5.k, log5.log_CI([0.01, 1, 100], 0.95, "r"), log5.log_CI([0.01, 1, 100], 0.99, "r")],
-         [log6.V0, log6.r, log6.k, log6.log_CI([0.01, 1, 1000], 0.95, "r"), log6.log_CI([0.01, 1, 1000], 0.99, "r")]
+data1 = [[log1.V0, log1.r, log1.k, np.around(log1.log_CI([0.01, 1, 1], 0.95, "r"), 6), np.around(log1.log_CI([0.01, 1, 1], 0.99, "r"), 6)],
+         [log2.V0, log2.r, log2.k, np.around(log2.log_CI([0.01, 1, 5], 0.95, "r"), 6), np.around(log2.log_CI([0.01, 1, 5], 0.99, "r"), 6)],
+         [log3.V0, log3.r, log3.k, np.around(log3.log_CI([0.01, 1, 10], 0.95, "r"), 6), np.around(log3.log_CI([0.01, 1, 10], 0.99, "r"), 6)],
+         [log4.V0, log4.r, log4.k, np.around(log4.log_CI([0.01, 1, 25], 0.95, "r"), 6), np.around(log4.log_CI([0.01, 1, 25], 0.99, "r"), 6)],
+         [log5.V0, log5.r, log5.k, np.around(log5.log_CI([0.01, 1, 100], 0.95, "r"), 6), np.around(log5.log_CI([0.01, 1, 100], 0.99, "r"), 6)],
+         [log6.V0, log6.r, log6.k, np.around(log6.log_CI([0.01, 1, 1000], 0.95, "r"), 6), np.around(log6.log_CI([0.01, 1, 1000], 0.99, "r"), 6)]
          ]
-data2 = [[log1.V0, log1.r, log1.k, log1.log_CI([0.01, 1, 1], 0.95, "k"), log1.log_CI([0.01, 1, 1], 0.99, "k")],
-         [log2.V0, log2.r, log2.k, log2.log_CI([0.01, 1, 5], 0.95, "k"), log2.log_CI([0.01, 1, 5], 0.99, "k")],
-         [log3.V0, log3.r, log3.k, log3.log_CI([0.01, 1, 10], 0.95, "k"), log3.log_CI([0.01, 1, 10], 0.99, "k")],
-         [log4.V0, log4.r, log4.k, log4.log_CI([0.01, 1, 25], 0.95, "k"), log4.log_CI([0.01, 1, 25], 0.99, "k")],
-         [log5.V0, log5.r, log5.k, log5.log_CI([0.01, 1, 100], 0.95, "k"), log5.log_CI([0.01, 1, 100], 0.99, "k")],
-         [log6.V0, log6.r, log6.k, log6.log_CI([0.01, 1, 1000], 0.95, "k"), log6.log_CI([0.01, 1, 1000], 0.99, "k")]
+data2 = [[log1.V0, log1.r, log1.k, np.around(log1.log_CI([0.01, 1, 1], 0.95, "k"), 6), np.around(log1.log_CI([0.01, 1, 1], 0.99, "k"), 6)],
+         [log2.V0, log2.r, log2.k, np.around(log2.log_CI([0.01, 1, 5], 0.95, "k"), 6), np.around(log2.log_CI([0.01, 1, 5], 0.99, "k"), 6)],
+         [log3.V0, log3.r, log3.k, np.around(log3.log_CI([0.01, 1, 10], 0.95, "k"), 6), np.around(log3.log_CI([0.01, 1, 10], 0.99, "k"), 6)],
+         [log4.V0, log4.r, log4.k, np.around(log4.log_CI([0.01, 1, 25], 0.95, "k"), 6), np.around(log4.log_CI([0.01, 1, 25], 0.99, "k"), 6)],
+         [log5.V0, log5.r, log5.k, np.around(log5.log_CI([0.01, 1, 100], 0.95, "k"), 6), np.around(log5.log_CI([0.01, 1, 100], 0.99, "k"), 6)],
+         [log6.V0, log6.r, log6.k, np.around(log6.log_CI([0.01, 1, 1000], 0.95, "k"), 6), np.around(log6.log_CI([0.01, 1, 1000], 0.99, "k"), 6)]
          ]
 
 # print(tabulate(data1, headers=col_names1, tablefmt="latex"))
@@ -1394,17 +1396,17 @@ log4 = Logistic(0.05, 10, 1, 25, 1)
 log5 = Logistic(0.05, 10, 1, 100, 1)
 log6 = Logistic(0.05, 10, 1, 1000, 1)
 
-data1 = [[log1.V0, log1.r, log1.k, log1.log_CI([10, 1, 1], 0.95, "r"), log1.log_CI([10, 1, 1], 0.99, "r")],
-         [log2.V0, log2.r, log2.k, log2.log_CI([10, 1, 5], 0.95, "r"), log2.log_CI([10, 1, 5], 0.99, "r")],
-         [log4.V0, log4.r, log4.k, log4.log_CI([10, 1, 25], 0.95, "r"), log4.log_CI([10, 1, 25], 0.99, "r")],
-         [log5.V0, log5.r, log5.k, log5.log_CI([10, 1, 100], 0.95, "r"), log5.log_CI([10, 1, 100], 0.99, "r")],
-         [log6.V0, log6.r, log6.k, log6.log_CI([10, 1, 1000], 0.95, "r"), log6.log_CI([10, 1, 1000], 0.99, "r")]
+data1 = [[log1.V0, log1.r, log1.k, np.around(log1.log_CI([10, 1, 1], 0.95, "r"), 6), np.around(log1.log_CI([10, 1, 1], 0.99, "r"), 6)],
+         [log2.V0, log2.r, log2.k, np.around(log2.log_CI([10, 1, 5], 0.95, "r"), 6), np.around(log2.log_CI([10, 1, 5], 0.99, "r"), 6)],
+         [log4.V0, log4.r, log4.k, np.around(log4.log_CI([10, 1, 25], 0.95, "r"), 6), np.around(log4.log_CI([10, 1, 25], 0.99, "r"), 6)],
+         [log5.V0, log5.r, log5.k, np.around(log5.log_CI([10, 1, 100], 0.95, "r"), 6), np.around(log5.log_CI([10, 1, 100], 0.99, "r"), 6)],
+         [log6.V0, log6.r, log6.k, np.around(log6.log_CI([10, 1, 1000], 0.95, "r"), 6), np.around(log6.log_CI([10, 1, 1000], 0.99, "r"), 6)]
          ]
-data2 = [[log1.V0, log1.r, log1.k, log1.log_CI([10, 1, 1], 0.95, "k"), log1.log_CI([10, 1, 1], 0.99, "k")],
-         [log2.V0, log2.r, log2.k, log2.log_CI([10, 1, 5], 0.95, "k"), log2.log_CI([10, 1, 5], 0.99, "k")],
-         [log4.V0, log4.r, log4.k, log4.log_CI([10, 1, 25], 0.95, "k"), log4.log_CI([10, 1, 25], 0.99, "k")],
-         [log5.V0, log5.r, log5.k, log5.log_CI([10, 1, 100], 0.95, "k"), log5.log_CI([10, 1, 100], 0.99, "k")],
-         [log6.V0, log6.r, log6.k, log6.log_CI([10, 1, 1000], 0.95, "k"), log6.log_CI([10, 1, 1000], 0.99, "k")]
+data2 = [[log1.V0, log1.r, log1.k, np.around(log1.log_CI([10, 1, 1], 0.95, "k"), 6), np.around(log1.log_CI([10, 1, 1], 0.99, "k"), 6)],
+         [log2.V0, log2.r, log2.k, np.around(log2.log_CI([10, 1, 5], 0.95, "k"), 6), np.around(log2.log_CI([10, 1, 5], 0.99, "k"), 6)],
+         [log4.V0, log4.r, log4.k, np.around(log4.log_CI([10, 1, 25], 0.95, "k"), 6), np.around(log4.log_CI([10, 1, 25], 0.99, "k"), 6)],
+         [log5.V0, log5.r, log5.k, np.around(log5.log_CI([10, 1, 100], 0.95, "k"), 6), np.around(log5.log_CI([10, 1, 100], 0.99, "k"), 6)],
+         [log6.V0, log6.r, log6.k, np.around(log6.log_CI([10, 1, 1000], 0.95, "k"), 6), np.around(log6.log_CI([10, 1, 1000], 0.99, "k"), 6)]
          ]
 
 # print(tabulate(data1, headers=col_names1, tablefmt="latex"))
@@ -1423,7 +1425,7 @@ data1 = [[log1.V0, log1.r, log1.k, log1.noise, log1.get_mle([1,1,10])[0], log1.g
          [log4.V0, log4.r, log4.k, log4.noise, log4.get_mle([1,1,10])[0], log4.get_mle([1,1,10])[1], log4.get_mle([1,1,10])[2]]
          ]
 
-col_names1 = ["V0", "r", "k", "\u03C3", "MLE for V0", "MLE for r", "MLE for k"]
+# col_names1 = ["V0", "r", "k", "\u03C3", "MLE for V0", "MLE for r", "MLE for k"]
 
 # print(tabulate(data1, headers=col_names1, tablefmt="latex"))
 
@@ -1472,19 +1474,19 @@ gomp4 = Gompertz(0.05, 0.01, 5, 10)
 gomp5 = Gompertz(0.05, 0.01, 25, 10)
 gomp6 = Gompertz(0.05, 0.01, 100, 10)
 
-data1 = [[gomp1.V0, gomp1.r, gomp1.k, gomp1.gomp_CI([0.01, 0.1, 10], 0.95, "r"), gomp1.gomp_CI([0.01, 0.1, 10], 0.99, "r")],
-         [gomp2.V0, gomp2.r, gomp2.k, gomp2.gomp_CI([0.01, 0.5, 10], 0.95, "r"), gomp2.gomp_CI([0.01, 0.5, 10], 0.99, "r")],
-         [gomp3.V0, gomp3.r, gomp3.k, gomp3.gomp_CI([0.01, 1, 10], 0.95, "r"), gomp3.gomp_CI([0.01, 1, 10], 0.99, "r")],
-         [gomp4.V0, gomp4.r, gomp4.k, gomp4.gomp_CI([0.01, 5, 10], 0.95, "r"), gomp4.gomp_CI([0.01, 5, 10], 0.99, "r")],
-         [gomp5.V0, gomp5.r, gomp5.k, gomp5.gomp_CI([0.01, 25, 10], 0.95, "r"), gomp5.gomp_CI([0.01, 25, 10], 0.99, "r")],
-         [gomp6.V0, gomp6.r, gomp6.k, gomp6.gomp_CI([0.01, 100, 10], 0.95, "r"), gomp6.gomp_CI([0.01, 100, 10], 0.99, "r")]
+data1 = [[gomp1.V0, gomp1.r, gomp1.k, np.around(gomp1.gomp_CI([0.01, 0.1, 10], 0.95, "r"), 6), np.around(gomp1.gomp_CI([0.01, 0.1, 10], 0.99, "r"), 6)],
+         [gomp2.V0, gomp2.r, gomp2.k, np.around(gomp2.gomp_CI([0.01, 0.5, 10], 0.95, "r"), 6), np.around(gomp2.gomp_CI([0.01, 0.5, 10], 0.99, "r"), 6)],
+         [gomp3.V0, gomp3.r, gomp3.k, np.around(gomp3.gomp_CI([0.01, 1, 10], 0.95, "r"), 6), np.around(gomp3.gomp_CI([0.01, 1, 10], 0.99, "r"), 6)],
+         [gomp4.V0, gomp4.r, gomp4.k, np.around(gomp4.gomp_CI([0.01, 5, 10], 0.95, "r"), 6), np.around(gomp4.gomp_CI([0.01, 5, 10], 0.99, "r"), 6)],
+         [gomp5.V0, gomp5.r, gomp5.k, np.around(gomp5.gomp_CI([0.01, 25, 10], 0.95, "r"), 6), np.around(gomp5.gomp_CI([0.01, 25, 10], 0.99, "r"), 6)],
+         [gomp6.V0, gomp6.r, gomp6.k, np.around(gomp6.gomp_CI([0.01, 100, 10], 0.95, "r"), 6), np.around(gomp6.gomp_CI([0.01, 100, 10], 0.99, "r"), 6)]
          ]
-data2 = [[gomp1.V0, gomp1.r, gomp1.k, gomp1.gomp_CI([0.01, 0.1, 10], 0.95, "k"), gomp1.gomp_CI([0.01, 0.1, 10], 0.99, "k")],
-         [gomp2.V0, gomp2.r, gomp2.k, gomp2.gomp_CI([0.01, 0.5, 10], 0.95, "k"), gomp2.gomp_CI([0.01, 0.5, 10], 0.99, "k")],
-         [gomp3.V0, gomp3.r, gomp3.k, gomp3.gomp_CI([0.01, 1, 10], 0.95, "k"), gomp3.gomp_CI([0.01, 1, 10], 0.99, "k")],
-         [gomp4.V0, gomp4.r, gomp4.k, gomp4.gomp_CI([0.01, 5, 10], 0.95, "k"), gomp4.gomp_CI([0.01, 5, 10], 0.99, "k")],
-         [gomp5.V0, gomp5.r, gomp5.k, gomp5.gomp_CI([0.01, 25, 10], 0.95, "k"), gomp5.gomp_CI([0.01, 25, 10], 0.99, "k")],
-         [gomp6.V0, gomp6.r, gomp6.k, gomp6.gomp_CI([0.01, 100, 10], 0.95, "k"), gomp6.gomp_CI([0.01, 100, 10], 0.99, "k")]
+data2 = [[gomp1.V0, gomp1.r, gomp1.k, np.around(gomp1.gomp_CI([0.01, 0.1, 10], 0.95, "k"), 6), np.around(gomp1.gomp_CI([0.01, 0.1, 10], 0.99, "k"), 6)],
+         [gomp2.V0, gomp2.r, gomp2.k, np.around(gomp2.gomp_CI([0.01, 0.5, 10], 0.95, "k"), 6), np.around(gomp2.gomp_CI([0.01, 0.5, 10], 0.99, "k"), 6)],
+         [gomp3.V0, gomp3.r, gomp3.k, np.around(gomp3.gomp_CI([0.01, 1, 10], 0.95, "k"), 6), np.around(gomp3.gomp_CI([0.01, 1, 10], 0.99, "k"), 6)],
+         [gomp4.V0, gomp4.r, gomp4.k, np.around(gomp4.gomp_CI([0.01, 5, 10], 0.95, "k"), 6), np.around(gomp4.gomp_CI([0.01, 5, 10], 0.99, "k"), 6)],
+         [gomp5.V0, gomp5.r, gomp5.k, np.around(gomp5.gomp_CI([0.01, 25, 10], 0.95, "k"), 6), np.around(gomp5.gomp_CI([0.01, 25, 10], 0.99, "k"), 6)],
+         [gomp6.V0, gomp6.r, gomp6.k, np.around(gomp6.gomp_CI([0.01, 100, 10], 0.95, "k"), 6), np.around(gomp6.gomp_CI([0.01, 100, 10], 0.99, "k"), 6)]
          ]
 
 # print(tabulate(data1, headers=col_names1, tablefmt="latex"))
@@ -1500,19 +1502,19 @@ gomp4 = Gompertz(0.05, 0.01, 1, 25)
 gomp5 = Gompertz(0.05, 0.01, 1, 100)
 gomp6 = Gompertz(0.05, 0.01, 1, 1000)
 
-data1 = [[gomp1.V0, gomp1.r, gomp1.k, gomp1.gomp_CI([0.01, 1, 1], 0.95, "r"), gomp1.gomp_CI([0.01, 1, 1], 0.99, "r")],
-         [gomp2.V0, gomp2.r, gomp2.k, gomp2.gomp_CI([0.01, 1, 5], 0.95, "r"), gomp2.gomp_CI([0.01, 1, 5], 0.99, "r")],
-         [gomp3.V0, gomp3.r, gomp3.k, gomp3.gomp_CI([0.01, 1, 10], 0.95, "r"), gomp3.gomp_CI([0.01, 1, 10], 0.99, "r")],
-         [gomp4.V0, gomp4.r, gomp4.k, gomp4.gomp_CI([0.01, 1, 25], 0.95, "r"), gomp4.gomp_CI([0.01, 1, 25], 0.99, "r")],
-         [gomp5.V0, gomp5.r, gomp5.k, gomp5.gomp_CI([0.01, 1, 100], 0.95, "r"), gomp5.gomp_CI([0.01, 1, 100], 0.99, "r")],
-         [gomp6.V0, gomp6.r, gomp6.k, gomp6.gomp_CI([0.01, 1, 1000], 0.95, "r"), gomp6.gomp_CI([0.01, 1, 1000], 0.99, "r")]
+data1 = [[gomp1.V0, gomp1.r, gomp1.k, np.around(gomp1.gomp_CI([0.01, 1, 1], 0.95, "r"), 6), np.around(gomp1.gomp_CI([0.01, 1, 1], 0.99, "r"), 6)],
+         [gomp2.V0, gomp2.r, gomp2.k, np.around(gomp2.gomp_CI([0.01, 1, 5], 0.95, "r"), 6), np.around(gomp2.gomp_CI([0.01, 1, 5], 0.99, "r"), 6)],
+         [gomp3.V0, gomp3.r, gomp3.k, np.around(gomp3.gomp_CI([0.01, 1, 10], 0.95, "r"), 6), np.around(gomp3.gomp_CI([0.01, 1, 10], 0.99, "r"), 6)],
+         [gomp4.V0, gomp4.r, gomp4.k, np.around(gomp4.gomp_CI([0.01, 1, 25], 0.95, "r"), 6), np.around(gomp4.gomp_CI([0.01, 1, 25], 0.99, "r"), 6)],
+         [gomp5.V0, gomp5.r, gomp5.k, np.around(gomp5.gomp_CI([0.01, 1, 100], 0.95, "r"), 6), np.around(gomp5.gomp_CI([0.01, 1, 100], 0.99, "r"), 6)],
+         [gomp6.V0, gomp6.r, gomp6.k, np.around(gomp6.gomp_CI([0.01, 1, 1000], 0.95, "r"), 6), np.around(gomp6.gomp_CI([0.01, 1, 1000], 0.99, "r"), 6)]
          ]
-data2 = [[gomp1.V0, gomp1.r, gomp1.k, gomp1.gomp_CI([0.01, 1, 1], 0.95, "k"), gomp1.gomp_CI([0.01, 1, 1], 0.99, "k")],
-         [gomp2.V0, gomp2.r, gomp2.k, gomp2.gomp_CI([0.01, 1, 5], 0.95, "k"), gomp2.gomp_CI([0.01, 1, 5], 0.99, "k")],
-         [gomp3.V0, gomp3.r, gomp3.k, gomp3.gomp_CI([0.01, 1, 10], 0.95, "k"), gomp3.gomp_CI([0.01, 1, 10], 0.99, "k")],
-         [gomp4.V0, gomp4.r, gomp4.k, gomp4.gomp_CI([0.01, 1, 25], 0.95, "k"), gomp4.gomp_CI([0.01, 1, 25], 0.99, "k")],
-         [gomp5.V0, gomp5.r, gomp5.k, gomp5.gomp_CI([0.01, 1, 100], 0.95, "k"), gomp5.gomp_CI([0.01, 1, 100], 0.99, "k")],
-         [gomp6.V0, gomp6.r, gomp6.k, gomp6.gomp_CI([0.01, 1, 1000], 0.95, "k"), gomp6.gomp_CI([0.01, 1, 1000], 0.99, "k")]
+data2 = [[gomp1.V0, gomp1.r, gomp1.k, np.around(gomp1.gomp_CI([0.01, 1, 1], 0.95, "k"), 6), np.around(gomp1.gomp_CI([0.01, 1, 1], 0.99, "k"), 6)],
+         [gomp2.V0, gomp2.r, gomp2.k, np.around(gomp2.gomp_CI([0.01, 1, 5], 0.95, "k"), 6), np.around(gomp2.gomp_CI([0.01, 1, 5], 0.99, "k"), 6)],
+         [gomp3.V0, gomp3.r, gomp3.k, np.around(gomp3.gomp_CI([0.01, 1, 10], 0.95, "k"), 6), np.around(gomp3.gomp_CI([0.01, 1, 10], 0.99, "k"), 6)],
+         [gomp4.V0, gomp4.r, gomp4.k, np.around(gomp4.gomp_CI([0.01, 1, 25], 0.95, "k"), 6), np.around(gomp4.gomp_CI([0.01, 1, 25], 0.99, "k"), 6)],
+         [gomp5.V0, gomp5.r, gomp5.k, np.around(gomp5.gomp_CI([0.01, 1, 100], 0.95, "k"), 6), np.around(gomp5.gomp_CI([0.01, 1, 100], 0.99, "k"), 6)],
+         [gomp6.V0, gomp6.r, gomp6.k, np.around(gomp6.gomp_CI([0.01, 1, 1000], 0.95, "k"), 6), np.around(gomp6.gomp_CI([0.01, 1, 1000], 0.99, "k"), 6)]
          ]
 
 # print(tabulate(data1, headers=col_names1, tablefmt="latex"))
@@ -1527,17 +1529,17 @@ gomp4 = Gompertz(0.05, 10, 1, 25)
 gomp5 = Gompertz(0.05, 10, 1, 100)
 gomp6 = Gompertz(0.05, 10, 1, 1000)
 
-data1 = [[gomp1.V0, gomp1.r, gomp1.k, gomp1.gomp_CI([10, 1, 1], 0.95, "r"), gomp1.gomp_CI([10, 1, 1], 0.99, "r")],
-         [gomp2.V0, gomp2.r, gomp2.k, gomp2.gomp_CI([10, 1, 5], 0.95, "r"), gomp2.gomp_CI([10, 1, 5], 0.99, "r")],
-         [gomp4.V0, gomp4.r, gomp4.k, gomp4.gomp_CI([10, 1, 25], 0.95, "r"), gomp4.gomp_CI([10, 1, 25], 0.99, "r")],
-         [gomp5.V0, gomp5.r, gomp5.k, gomp5.gomp_CI([10, 1, 100], 0.95, "r"), gomp5.gomp_CI([10, 1, 100], 0.99, "r")],
-         [gomp6.V0, gomp6.r, gomp6.k, gomp6.gomp_CI([10, 1, 1000], 0.95, "r"), gomp6.gomp_CI([10, 1, 1000], 0.99, "r")]
+data1 = [[gomp1.V0, gomp1.r, gomp1.k, np.around(gomp1.gomp_CI([10, 1, 1], 0.95, "r"), 6), np.around(gomp1.gomp_CI([10, 1, 1], 0.99, "r"), 6)],
+         [gomp2.V0, gomp2.r, gomp2.k, np.around(gomp2.gomp_CI([10, 1, 5], 0.95, "r"), 6), np.around(gomp2.gomp_CI([10, 1, 5], 0.99, "r"), 6)],
+         [gomp4.V0, gomp4.r, gomp4.k, np.around(gomp4.gomp_CI([10, 1, 25], 0.95, "r"), 6), np.around(gomp4.gomp_CI([10, 1, 25], 0.99, "r"), 6)],
+         [gomp5.V0, gomp5.r, gomp5.k, np.around(gomp5.gomp_CI([10, 1, 100], 0.95, "r"), 6), np.around(gomp5.gomp_CI([10, 1, 100], 0.99, "r"), 6)],
+         [gomp6.V0, gomp6.r, gomp6.k, np.around(gomp6.gomp_CI([10, 1, 1000], 0.95, "r"), 6), np.around(gomp6.gomp_CI([10, 1, 1000], 0.99, "r"), 6)]
          ]
-data2 = [[gomp1.V0, gomp1.r, gomp1.k, gomp1.gomp_CI([10, 1, 1], 0.95, "k"), gomp1.gomp_CI([10, 1, 1], 0.99, "k")],
-         [gomp2.V0, gomp2.r, gomp2.k, gomp2.gomp_CI([10, 1, 5], 0.95, "k"), gomp2.gomp_CI([10, 1, 5], 0.99, "k")],
-         [gomp4.V0, gomp4.r, gomp4.k, gomp4.gomp_CI([10, 1, 25], 0.95, "k"), gomp4.gomp_CI([10, 1, 25], 0.99, "k")],
-         [gomp5.V0, gomp5.r, gomp5.k, gomp5.gomp_CI([10, 1, 100], 0.95, "k"), gomp5.gomp_CI([10, 1, 100], 0.99, "k")],
-         [gomp6.V0, gomp6.r, gomp6.k, gomp6.gomp_CI([10, 1, 1000], 0.95, "k"), gomp6.gomp_CI([10, 1, 1000], 0.99, "k")]
+data2 = [[gomp1.V0, gomp1.r, gomp1.k, np.around(gomp1.gomp_CI([10, 1, 1], 0.95, "k"), 6), np.around(gomp1.gomp_CI([10, 1, 1], 0.99, "k"), 6)],
+         [gomp2.V0, gomp2.r, gomp2.k, np.around(gomp2.gomp_CI([10, 1, 5], 0.95, "k"), 6), np.around(gomp2.gomp_CI([10, 1, 5], 0.99, "k"), 6)],
+         [gomp4.V0, gomp4.r, gomp4.k, np.around(gomp4.gomp_CI([10, 1, 25], 0.95, "k"), 6), np.around(gomp4.gomp_CI([10, 1, 25], 0.99, "k"), 6)],
+         [gomp5.V0, gomp5.r, gomp5.k, np.around(gomp5.gomp_CI([10, 1, 100], 0.95, "k"), 6), np.around(gomp5.gomp_CI([10, 1, 100], 0.99, "k"), 6)],
+         [gomp6.V0, gomp6.r, gomp6.k, np.around(gomp6.gomp_CI([10, 1, 1000], 0.95, "k"), 6), np.around(gomp6.gomp_CI([10, 1, 1000], 0.99, "k"), 6)]
          ]
 
 # print(tabulate(data1, headers=col_names1, tablefmt="latex"))
@@ -1599,33 +1601,13 @@ bert1 = Bertalanffy(0.05, 0.01, 1, 1, 1)
 bert2 = Bertalanffy(0.05, 0.01, 2, 1, 1)
 bert3 = Bertalanffy(0.05, 0.01, 1, 2, 1)
 
-data1 = [[bert1.V0, bert1.b, bert1.d, bert1.bert_CI([0.01, 1, 1], 0.95, "b"), bert1.bert_CI([0.01, 1, 1], 0.99, "b")],
-         [bert2.V0, bert2.b, bert2.d, bert2.bert_CI([0.01, 2, 1], 0.95, "b"), bert2.bert_CI([0.01, 2, 1], 0.99, "b")],
-         [bert3.V0, bert3.b, bert3.d, bert3.bert_CI([0.01, 1, 2], 0.95, "b"), bert3.bert_CI([0.01, 1, 2], 0.99, "b")]
+data1 = [[bert1.V0, bert1.b, bert1.d, np.around(bert1.bert_CI([0.01, 1, 1], 0.95, "b"), 6), np.around(bert1.bert_CI([0.01, 1, 1], 0.99, "b"), 6)],
+         [bert2.V0, bert2.b, bert2.d, np.around(bert2.bert_CI([0.01, 2, 1], 0.95, "b"), 6), np.around(bert2.bert_CI([0.01, 2, 1], 0.99, "b"), 6)],
+         [bert3.V0, bert3.b, bert3.d, np.around(bert3.bert_CI([0.01, 1, 2], 0.95, "b"), 6), np.around(bert3.bert_CI([0.01, 1, 2], 0.99, "b"), 6)]
          ]
-data2 = [[bert1.V0, bert1.b, bert1.d, bert1.bert_CI([0.01, 1, 1], 0.95, "d"), bert1.bert_CI([0.01, 1, 1], 0.99, "d")],
-         [bert2.V0, bert2.b, bert2.d, bert2.bert_CI([0.01, 2, 1], 0.95, "d"), bert2.bert_CI([0.01, 2, 1], 0.99, "d")],
-         [bert3.V0, bert3.b, bert3.d, bert3.bert_CI([0.01, 1, 2], 0.95, "d"), bert3.bert_CI([0.01, 1, 2], 0.99, "d")]
-         ]
-
-col_names1 = ["V0", "b", "d", "95% Confidence Interval for b", "99% Confidence Interval for b"]
-col_names2 = ["V0", "b", "d", "95% Confidence Interval for d", "99% Confidence Interval for d"]
-
-# print(tabulate(data1, headers=col_names1, tablefmt="latex"))
-# print(tabulate(data2, headers=col_names2, tablefmt="latex"))
-
-# Bertalanffy models with noise = 0.05 (High Initial Volume)
-bert1 = Bertalanffy(0.05, 10, 1, 1, 1)
-bert2 = Bertalanffy(0.05, 10, 2, 1, 1)
-bert3 = Bertalanffy(0.05, 10, 1, 2, 1)
-
-data1 = [[bert1.V0, bert1.b, bert1.d, bert1.bert_CI([10, 1, 1], 0.95, "b"), bert1.bert_CI([10, 1, 1], 0.99, "b")],
-         [bert2.V0, bert2.b, bert2.d, bert2.bert_CI([10, 2, 1], 0.95, "b"), bert2.bert_CI([10, 2, 1], 0.99, "b")],
-         [bert3.V0, bert3.b, bert3.d, bert3.bert_CI([10, 1, 2], 0.95, "b"), bert3.bert_CI([10, 1, 2], 0.99, "b")]
-         ]
-data2 = [[bert1.V0, bert1.b, bert1.d, bert1.bert_CI([10, 1, 1], 0.95, "d"), bert1.bert_CI([10, 1, 1], 0.99, "d")],
-         [bert2.V0, bert2.b, bert2.d, bert2.bert_CI([10, 2, 1], 0.95, "d"), bert2.bert_CI([10, 2, 1], 0.99, "d")],
-         [bert3.V0, bert3.b, bert3.d, bert3.bert_CI([10, 1, 2], 0.95, "d"), bert3.bert_CI([10, 1, 2], 0.99, "d")]
+data2 = [[bert1.V0, bert1.b, bert1.d, np.around(bert1.bert_CI([0.01, 1, 1], 0.95, "d"), 6), np.around(bert1.bert_CI([0.01, 1, 1], 0.99, "d"), 6)],
+         [bert2.V0, bert2.b, bert2.d, np.around(bert2.bert_CI([0.01, 2, 1], 0.95, "d"), 6), np.around(bert2.bert_CI([0.01, 2, 1], 0.99, "d"), 6)],
+         [bert3.V0, bert3.b, bert3.d, np.around(bert3.bert_CI([0.01, 1, 2], 0.95, "d"), 6), np.around(bert3.bert_CI([0.01, 1, 2], 0.99, "d"), 6)]
          ]
 
 col_names1 = ["V0", "b", "d", "95% Confidence Interval for b", "99% Confidence Interval for b"]
@@ -1633,6 +1615,26 @@ col_names2 = ["V0", "b", "d", "95% Confidence Interval for d", "99% Confidence I
 
 # print(tabulate(data1, headers=col_names1, tablefmt="latex"))
 # print(tabulate(data2, headers=col_names2, tablefmt="latex"))
+
+# Bertalanffy models with noise = 0.5 (Low Initial Volume)
+bert1 = Bertalanffy(0.5, 0.01, 1, 1, 1)
+bert2 = Bertalanffy(0.5, 0.01, 2, 1, 1)
+bert3 = Bertalanffy(0.5, 0.01, 1, 2, 1)
+
+data1 = [[bert1.V0, bert1.b, bert1.d, np.around(bert1.bert_CI([0.01, 1, 1], 0.95, "b"), 6), np.around(bert1.bert_CI([0.01, 1, 1], 0.99, "b"), 6)],
+         [bert2.V0, bert2.b, bert2.d, np.around(bert2.bert_CI([0.01, 2, 1], 0.95, "b"), 6), np.around(bert2.bert_CI([0.01, 2, 1], 0.99, "b"), 6)],
+         [bert3.V0, bert3.b, bert3.d, np.around(bert3.bert_CI([0.01, 1, 2], 0.95, "b"), 6), np.around(bert3.bert_CI([0.01, 1, 2], 0.99, "b"), 6)]
+         ]
+data2 = [[bert1.V0, bert1.b, bert1.d, np.around(bert1.bert_CI([0.01, 1, 1], 0.95, "d"), 6), np.around(bert1.bert_CI([0.01, 1, 1], 0.99, "d"), 6)],
+         [bert2.V0, bert2.b, bert2.d, np.around(bert2.bert_CI([0.01, 2, 1], 0.95, "d"), 6), np.around(bert2.bert_CI([0.01, 2, 1], 0.99, "d"), 6)],
+         [bert3.V0, bert3.b, bert3.d, np.around(bert3.bert_CI([0.01, 1, 2], 0.95, "d"), 6), np.around(bert3.bert_CI([0.01, 1, 2], 0.99, "d"), 6)]
+         ]
+
+col_names1 = ["V0", "b", "d", "95% Confidence Interval for b", "99% Confidence Interval for b"]
+col_names2 = ["V0", "b", "d", "95% Confidence Interval for d", "99% Confidence Interval for d"]
+
+print(tabulate(data1, headers=col_names1, tablefmt="latex"))
+print(tabulate(data2, headers=col_names2, tablefmt="latex"))
 
 # Bertalanffy model with varying noise
 bert1 = Bertalanffy(0.05, 1, 2, 1, 1)
@@ -1685,91 +1687,6 @@ data = [[bert1.V0, bert1.b, bert1.d, 0.1, bert1.get_D(np.linspace(0,10,101), [be
 col_names = ["V0", "b", "d", "c", "D*"]
 
 # print(tabulate(data, headers=col_names, tablefmt="latex"))
-
-
-
-
-
-
-
-
-
-# log = Logistic(0.05, 5, 1, 10, 10)
-# gomp = Gompertz(0.05)
-# bert = Bertalanffy(0.05, 1, 2, 1, 1)
-
-
-# log.obj_func_plot(t_eval, [1, 5, 10], 1)
-# exp.obj_func_plot(t_eval, [1, 1], 1)
-# mend.obj_func_plot(t_eval, [1, 1, 2], 1)
-# gomp.obj_func_plot(t_eval, [1, 5, 10], 1)
-# bert.obj_func_plot(t_eval, [1, 5, 5], 1)
-
-# print(log.num_sol_opt(10))
-# print(log.get_p(10))
-# plt.plot(np.linspace(0, 10, len(log.get_v(10))), log.get_v(10))
-# plt.show()
-# print(log.num_sol_opt(10))
-# print(log.get_v(10))
-# print(log.get_p(10))
-
-
-# print(gomp.find_coeff(1, 1, 10, 1, 5))
-# print(gomp.find_other_coeff(1, 1, 10, 1, 5))
-# #print(gomp.opt_d(1, 1, 10, 10000, 5))
-# print(gomp.opt_sol(1, 1, 10, 1, 5))
-# print(4*np.log(1/10) - 4*gomp.find_coeff(1, 1, 10, 1, 5))
-# print(gomp.co_state(1, 1, 10, 1, 5))
-# gomp.plot_sol(1, 1, 10, 10000, 5)
-
-
-
-# print(log.num_sol_sys(10, 1, -1).y)
-# print(log.num_sol_sys(10, 1, -5).y)
-# log.plot_v(10, 1)
-# print(log.find_p0(10, 1))
-# print(log.num_sol_sys(log.find_p0(10, 1).root, 10, 1))
-# # log.plot_res(10, 1)
-# print(log.opt_d(10, 1))
-# log.plot_d(2, 9.99)
-
-
-
-# print(bert.get_v(10, 1))
-# print(bert.get_p(10, 1))
-# print(bert.opt_d(10, 1))
-# bert.plot_v(10, 1)
-# bert.plot_d(10, 1)
-
-
-# exp.plot_v(2, 2, 10, 0.001)
-# exp.plot_p(2, 2, 10, 0.001)
-# exp.plot_D(2, 2, 10, 0.001)
-# exp.plot_v_D(2, 1, 10, 1)
-
-
-# mend.plot_v(10, 1)
-# mend.plot_res(10, 1)
-# mend.plot_v_1(1, 1, 2, 10, 1)
-# mend.plot_p(1, 1, 2, 10, 1)
-
-
-# gomp.plot_v(1, 5, 20, 10, 0.000001)
-# gomp.plot_p(1, 5, 20, 10, 1)
-# gomp.plot_D(1, 5, 20, 10, 0.000001)
-#print([np.real(gomp.p(i, 1, 5, 20, 10, 0.001)) for i in np.linspace(0, 10, 101)])
-# print(mend.res_bc(-0.001,10,2))
-# mend.plot_res(10, 5)
-# mend.plot_v_d(10, 5)
-# print(mend.num_sol_sys(-40, 10, 5))
-
-
-
-# y=[-mend8.mend_mle([0.01,1,2.5]).fun - mend8.log_l([mend8.mend_mle([0.01,1,2.5]).x[0], mend8.mend_mle([0.01,1,2.5]).x[1], b], mend8.noise) - chi2.ppf(0.95, 1)/2 for b in np.linspace(0, 3, 101)]
-# plt.plot(np.linspace(0, 3, 101), y)
-# plt.show()
-
-
 
 #################################################################################################################################################################
 
