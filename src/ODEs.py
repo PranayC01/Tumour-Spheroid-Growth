@@ -5,6 +5,7 @@ import numpy as np
 from scipy.integrate import solve_ivp
 from scipy.optimize import minimize
 from scipy.optimize import root_scalar
+from scipy.optimize import curve_fit
 from scipy.special import lambertw
 from scipy.stats import chi2
 from tabulate import tabulate
@@ -40,6 +41,9 @@ class Exponential:
     # Analytical solution of Exponential ODE theta = [V0, a]
     def exp_sol(self, theta, t):
         return theta[0]*np.exp(theta[1]*t)
+    # Re-write Analytical solution for curve_fit
+    def exp_sol_fit(self, t, V0, a):
+        return V0*np.exp(a*t)
     # Numerical solution to Exponential ODE, theta = [V0, a]
     def exp_num_sol(self, theta):
         return solve_ivp(self.ode, [0, 10], [theta[0]], args = (theta[1],), t_eval = np.linspace(0, 10, 101))
@@ -223,6 +227,9 @@ class Mendelsohn:
     # Analytical solution of Mendelsohn ODE, theta = [V_0, a, b]
     def mend_sol(self, theta, t):
         return ((1 - theta[2])*theta[1]*t + theta[0]**(1-theta[2]))**(1/(1-theta[2]))
+    # Re-write Analytical solution for curve_fit
+    def mend_sol_fit(self, t, V0, a, b):
+        return ((1 - b)*a*t + V0**(1-b))**(1/(1-b))
     # Numerical solution to Mendelsohn ODE, theta = [V0, a, b]
     def mend_num_sol(self, theta): 
         return solve_ivp(self.ode, [0, 10], [theta[0]], args = (theta[1], theta[2]), t_eval = np.linspace(0, 10, 101))
@@ -442,6 +449,9 @@ class Logistic:
     def log_sol(self, theta, t):
         #return (theta[0]/((theta[0]/theta[2])+(1 - theta[0]/theta[2])*np.exp(-theta[1]*t)))
         return (theta[0]*theta[2])/(theta[0] + (theta[2] - theta[0])*np.exp(-theta[1]*t))
+    # Re-write Analytical solution for curve_fit
+    def log_sol_fit(self, t, V0, r, k):
+        return (V0*k)/(V0 + (k - V0)*np.exp(-r*t))
     # Numerical solution to Logistic ODE, theta = [V0, r, K]
     def log_num_sol(self, theta): 
         return solve_ivp(self.ode, [0, 10], [theta[0]], args = (theta[1], theta[2]), t_eval = np.linspace(0, 10, 101))
@@ -638,6 +648,9 @@ class Gompertz:
     # Analytical solution of Gompertz ODE theta = [V_0, r, K]
     def gomp_sol(self, theta, t):
         return theta[2]*(theta[0]/theta[2])**np.exp(-theta[1]*t)
+    # Re-write Analytical solution for curve_fit
+    def gomp_sol_fit(self, t, V0, r, k):
+        return k*(V0/k)**np.exp(-r*t)
     # Numerical solution to Gompertz ODE, theta = [V0, r, K]
     def gomp_num_sol(self, theta): 
         return solve_ivp(self.ode, [0, 10], [theta[0]], args = (theta[1], theta[2]), t_eval = np.linspace(0, 10, 101))
@@ -835,6 +848,9 @@ class Bertalanffy:
     # Analytical solution of Bertalanffy ODE theta = [V_0, b, d]
     def bert_sol(self, theta, t):
         return ((theta[1]/theta[2])*(1 - np.exp(-theta[2]*t/3)) + (theta[0]**(1/3))*np.exp(-theta[2]*t/3))**3
+    # Re-write Analytical solution for curve_fit
+    def bert_sol_fit(self, t, V0, b, d):
+        return ((b/d)*(1 - np.exp(-d*t/3)) + (V0**(1/3))*np.exp(-d*t/3))**3
     # Numerical solution to Bertalanffy ODE, theta = [V0, b, d]
     def bert_num_sol(self, theta):
         return solve_ivp(self.ode, [0, 10], [theta[0]], args = (theta[1], theta[2]), t_eval = np.linspace(0, 10, 101))
@@ -1203,7 +1219,7 @@ col_names1 = ["V0", "a", "\u03C3", "MLE for V0", "MLE for a"]
 
 # Optimal Control Plot
 exp1 = Exponential(0.05, 0.01, 1)
-exp1.plot_v_D(exp1.V0, exp1.a, 10, 0.1)
+# exp1.plot_v_D(exp1.V0, exp1.a, 10, 0.1)
 
 # exp1.exp_sol_noise_plot([exp1.V0, 0.2], [0.05, 0.2, 0.5])
 
@@ -1633,8 +1649,8 @@ data2 = [[bert1.V0, bert1.b, bert1.d, np.around(bert1.bert_CI([0.01, 1, 1], 0.95
 col_names1 = ["V0", "b", "d", "95% Confidence Interval for b", "99% Confidence Interval for b"]
 col_names2 = ["V0", "b", "d", "95% Confidence Interval for d", "99% Confidence Interval for d"]
 
-print(tabulate(data1, headers=col_names1, tablefmt="latex"))
-print(tabulate(data2, headers=col_names2, tablefmt="latex"))
+# print(tabulate(data1, headers=col_names1, tablefmt="latex"))
+# print(tabulate(data2, headers=col_names2, tablefmt="latex"))
 
 # Bertalanffy model with varying noise
 bert1 = Bertalanffy(0.05, 1, 2, 1, 1)
@@ -1690,4 +1706,43 @@ col_names = ["V0", "b", "d", "c", "D*"]
 
 #################################################################################################################################################################
 
+# Fitting all models to data
 
+xdata = [0, 3, 4, 5, 6, 7, 10, 11, 12, 13, 14, 17, 18, 19, 20, 21]
+ydata = [41.8,85,114,162.3,178.3,325,623.7,648.4,835.9,1030.4,1141.8,1499.9,1429.3,1609.3,1678.3,1564]
+xdata = np.asarray(xdata)
+ydata = np.asarray(ydata)
+# plt.plot(xdata, ydata, 'o')
+# plt.show()
+
+exp_parameters, covariance = curve_fit(exp1.exp_sol_fit, xdata, ydata)
+print(exp_parameters)
+mend_parameters, covariance = curve_fit(mend1.mend_sol_fit, xdata, ydata, p0=[200, 0.1, 0.5])
+print(mend_parameters)
+log_parameters, covariance = curve_fit(log1.log_sol_fit, xdata, ydata)
+print(log_parameters)
+gomp_parameters, covariance = curve_fit(gomp1.gomp_sol_fit, xdata, ydata, maxfev=2000)
+print(gomp_parameters)
+bert_parameters, covariance = curve_fit(bert1.bert_sol_fit, xdata, ydata)
+print(bert_parameters)
+
+fit_exp = exp1.exp_sol_fit(xdata, exp_parameters[0], exp_parameters[1])
+fit_mend = mend1.mend_sol_fit(xdata, mend_parameters[0], mend_parameters[1], mend_parameters[2])
+fit_log = log1.log_sol_fit(xdata, log_parameters[0], log_parameters[1], log_parameters[2])
+fit_gomp = gomp1.gomp_sol_fit(xdata, gomp_parameters[0], gomp_parameters[1], gomp_parameters[2])
+fit_bert = bert1.bert_sol_fit(xdata, bert_parameters[0], bert_parameters[1], bert_parameters[2])
+
+plt.plot(xdata, ydata, 'o', label='Data', color="black")
+plt.plot(xdata, fit_exp, '-', label='Exponential')
+plt.plot(xdata, fit_mend, '-', label='Mendelsohn')
+plt.plot(xdata, fit_log, '-', label='Logistic')
+plt.plot(xdata, fit_gomp, '-', label='Gompertz')
+plt.plot(xdata, fit_bert, '-', label='Bertalanffy')
+plt.tick_params(labelsize=36)
+plt.rc('legend', fontsize=30)
+plt.rc('axes', titlesize=36)
+plt.xlabel("Time(days)", fontsize=36)
+plt.ylabel("Volume(Cubic millimetres)", fontsize=36)
+plt.title("")
+plt.legend()
+plt.show()
