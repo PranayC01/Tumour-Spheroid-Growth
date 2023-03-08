@@ -1218,10 +1218,10 @@ col_names1 = ["V0", "a", "\u03C3", "MLE for V0", "MLE for a"]
 # print(tabulate(data1, headers=col_names1, tablefmt="latex"))
 
 # Optimal Control Plot
-exp1 = Exponential(0.05, 0.01, 1)
+exp1 = Exponential(0.05, 1, 1)
 # exp1.plot_v_D(exp1.V0, exp1.a, 10, 0.1)
 
-# exp1.exp_sol_noise_plot([exp1.V0, 0.2], [0.05, 0.2, 0.5])
+# exp1.exp_sol_noise_plot([1, 0.2], [0.05, 0.2, 0.5])
 
 # exp1.plot([exp1.V0, exp1.a])
 
@@ -1318,7 +1318,7 @@ col_names1 = ["V0", "a", "b", "\u03C3", "MLE for V0", "MLE for a", "MLE for b"]
 # print(tabulate(data1, headers=col_names1, tablefmt="latex"))
 
 # Optimal Control Plot
-# mend1 = Mendelsohn(0.05, 1, 1, 0.5, 1)
+mend1 = Mendelsohn(0.05, 1, 1, 0.5, 1)
 # mend1.plot_v_D(10, mend1.V0)
 
 # mend1.mend_sol_noise_plot([mend1.V0, mend1.a, mend1.b], [0.05, 0.2, 0.5])
@@ -1580,7 +1580,7 @@ col_names1 = ["V0", "r", "k", "\u03C3", "MLE for V0", "MLE for r", "MLE for k"]
 # print(tabulate(data1, headers=col_names1, tablefmt="latex"))
 
 # Gompertz model with varying c
-gomp1 = Gompertz(0.05, 1, 5, 10)
+gomp1 = Gompertz(0.05, 1, 1, 10)
 
 # gomp1.plot_v_D(gomp1.V0, gomp1.r, gomp1.k, 10, 0.1)
 # gomp1.plot_v_D(gomp1.V0, gomp1.r, gomp1.k, 10, 1)
@@ -1716,15 +1716,15 @@ ydata = np.asarray(ydata)
 # plt.show()
 
 exp_parameters, covariance = curve_fit(exp1.exp_sol_fit, xdata, ydata)
-print(exp_parameters)
+# print(exp_parameters)
 mend_parameters, covariance = curve_fit(mend1.mend_sol_fit, xdata, ydata, p0=[200, 0.1, 0.5])
-print(mend_parameters)
+# print(mend_parameters)
 log_parameters, covariance = curve_fit(log1.log_sol_fit, xdata, ydata)
-print(log_parameters)
+# print(log_parameters)
 gomp_parameters, covariance = curve_fit(gomp1.gomp_sol_fit, xdata, ydata, maxfev=2000)
-print(gomp_parameters)
+# print(gomp_parameters)
 bert_parameters, covariance = curve_fit(bert1.bert_sol_fit, xdata, ydata)
-print(bert_parameters)
+# print(bert_parameters)
 
 fit_exp = exp1.exp_sol_fit(xdata, exp_parameters[0], exp_parameters[1])
 fit_mend = mend1.mend_sol_fit(xdata, mend_parameters[0], mend_parameters[1], mend_parameters[2])
@@ -1732,17 +1732,17 @@ fit_log = log1.log_sol_fit(xdata, log_parameters[0], log_parameters[1], log_para
 fit_gomp = gomp1.gomp_sol_fit(xdata, gomp_parameters[0], gomp_parameters[1], gomp_parameters[2])
 fit_bert = bert1.bert_sol_fit(xdata, bert_parameters[0], bert_parameters[1], bert_parameters[2])
 
-plt.plot(xdata, ydata, 'o', label='Data', color="black")
-plt.plot(xdata, fit_exp, '-', label='Exponential')
-plt.plot(xdata, fit_mend, '-', label='Mendelsohn')
-plt.plot(xdata, fit_log, '-', label='Logistic')
-plt.plot(xdata, fit_gomp, '-', label='Gompertz')
-plt.plot(xdata, fit_bert, '-', label='Bertalanffy')
-plt.tick_params(labelsize=36)
-plt.rc('legend', fontsize=30)
-plt.rc('axes', titlesize=36)
-plt.xlabel("Time(days)", fontsize=36)
-plt.ylabel("Volume(Cubic millimetres)", fontsize=36)
-plt.title("")
-plt.legend()
-plt.show()
+# plt.plot(xdata, ydata, 'o', label='Data', color="black")
+# plt.plot(xdata, fit_exp, '-', label='Exponential')
+# plt.plot(xdata, fit_mend, '-', label='Mendelsohn')
+# plt.plot(xdata, fit_log, '-', label='Logistic')
+# plt.plot(xdata, fit_gomp, '-', label='Gompertz')
+# plt.plot(xdata, fit_bert, '-', label='Bertalanffy')
+# plt.tick_params(labelsize=36)
+# plt.rc('legend', fontsize=30)
+# plt.rc('axes', titlesize=36)
+# plt.xlabel("Time(days)", fontsize=36)
+# plt.ylabel("Volume(Cubic millimetres)", fontsize=36)
+# plt.title("Tumour Volume Trajectories")
+# plt.legend()
+# plt.show()
