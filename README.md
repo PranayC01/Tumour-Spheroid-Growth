@@ -11,5 +11,5 @@ There are 5 models considered:
 4) Gompertz
 5) Bertalanffy
 
-
+All souce code can be found in the src folder, in the ODEs.py file.
 
