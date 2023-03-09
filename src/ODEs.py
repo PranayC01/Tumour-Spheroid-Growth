@@ -1053,7 +1053,7 @@ exp14 = Exponential(0.05, 10, 10)
 exp15 = Exponential(0.05, 10, 20)
 
 # Table: noise = 0.05
-# Create data
+# Confidence Intervals
 data1 = [[exp1.V0, exp1.a, np.around(exp1.exp_CI([0.01,1], 0.95, "V0"), 6), np.around(exp1.exp_CI([0.01,1], 0.99, "V0"), 6)],
         [exp2.V0, exp2.a, np.around(exp2.exp_CI([0.01,2], 0.95, "V0"), 6), np.around(exp2.exp_CI([0.01,2], 0.99, "V0"), 6)],
         [exp3.V0, exp3.a, np.around(exp3.exp_CI([0.01,5], 0.95, "V0"), 6), np.around(exp3.exp_CI([0.01,5], 0.99, "V0"), 6)],
@@ -1087,7 +1087,6 @@ col_names2 = ["V0", "a", "95% Confidence Interval for a", "99% Confidence Interv
 # print(tabulate(data3, headers=col_names1, tablefmt="latex"))
 # print(tabulate(data4, headers=col_names2, tablefmt="latex"))
 
-# print(exp1.exp_CI([0.01,1], 0.99, "a"))
 # Exponential Models with noise = 0.2, V0 = 0.01 and varying a
 exp1 = Exponential(0.2, 0.01, 1)
 exp2 = Exponential(0.2, 0.01, 2)
@@ -1110,7 +1109,7 @@ exp14 = Exponential(0.2, 10, 10)
 exp15 = Exponential(0.2, 10, 20)
 
 # Table: noise = 0.2
-# Create data
+# Confidence Intervals
 data1 = [[exp1.V0, exp1.a, exp1.exp_CI([0.01,1], 0.95, "V0"), exp1.exp_CI([0.01,1], 0.99, "V0")],
         [exp2.V0, exp2.a, exp2.exp_CI([0.01,2], 0.95, "V0"), exp2.exp_CI([0.01,2], 0.99, "V0")],
         [exp3.V0, exp3.a, exp3.exp_CI([0.01,5], 0.95, "V0"), exp3.exp_CI([0.01,5], 0.99, "V0")],
@@ -1166,7 +1165,7 @@ exp14 = Exponential(0.5, 10, 10)
 exp15 = Exponential(0.5, 10, 20)
 
 # Table: noise = 0.5
-# Create data
+# Confidence Intervals
 data1 = [[exp1.V0, exp1.a, np.around(exp1.exp_CI([0.01,1], 0.95, "V0"), 6), np.around(exp1.exp_CI([0.01,1], 0.99, "V0"), 6)],
         [exp2.V0, exp2.a, np.around(exp2.exp_CI([0.01,2], 0.95, "V0"), 6), np.around(exp2.exp_CI([0.01,2], 0.99, "V0"), 6)],
         [exp3.V0, exp3.a, np.around(exp3.exp_CI([0.01,5], 0.95, "V0"), 6), np.around(exp3.exp_CI([0.01,5], 0.99, "V0"), 6)],
@@ -1218,11 +1217,13 @@ col_names1 = ["V0", "a", "\u03C3", "MLE for V0", "MLE for a"]
 # print(tabulate(data1, headers=col_names1, tablefmt="latex"))
 
 # Optimal Control Plot
-exp1 = Exponential(0.05, 1, 1)
+# exp1 = Exponential(0.05, 1, 1)
 # exp1.plot_v_D(exp1.V0, exp1.a, 10, 0.1)
 
+# Noisy solutions plot
 # exp1.exp_sol_noise_plot([1, 0.2], [0.05, 0.2, 0.5])
 
+# Exponential model solution plot
 # exp1.plot([exp1.V0, exp1.a])
 
 exp1 = Exponential(0.05, 1, 1)
@@ -1258,6 +1259,8 @@ mend2 = Mendelsohn(0.05, 0.01, 1, 0.5, 1)
 mend3 = Mendelsohn(0.05, 0.01, 1, 0.95, 1)
 mend4 = Mendelsohn(0.05, 0.01, 1, 2, 1)
 
+# Confidence Intervals
+
 data1 = [[mend1.V0, mend1.a, mend1.b, np.around(mend1.mend_CI([0.01, 1, 0.1], 0.95, "b"), 6), np.around(mend1.mend_CI([0.01, 1, 0.1], 0.99, "b"), 6)],
          [mend2.V0, mend2.a, mend2.b, np.around(mend2.mend_CI([0.01, 1, 0.5], 0.95, "b"), 6), np.around(mend2.mend_CI([0.01, 1, 0.5], 0.99, "b"), 6)],
          [mend3.V0, mend3.a, mend3.b, np.around(mend3.mend_CI([0.01, 1, 2], 0.95, "b"), 6), np.around(mend3.mend_CI([0.01, 1, 2], 0.99, "b"), 6)],
@@ -1274,6 +1277,8 @@ mend6 = Mendelsohn(0.2, 0.01, 1, 0.5, 1)
 mend7 = Mendelsohn(0.2, 0.01, 1, 0.95, 1)
 mend8 = Mendelsohn(0.2, 0.01, 1, 2, 1)
 
+# Confidence Intervals
+
 data1 = [[mend5.V0, mend5.a, mend5.b, mend5.mend_CI([0.01, 1, 0.1], 0.95, "b"), mend5.mend_CI([0.01, 1, 0.1], 0.99, "b")],
          [mend6.V0, mend6.a, mend6.b, mend6.mend_CI([0.01, 1, 0.5], 0.95, "b"), mend6.mend_CI([0.01, 1, 0.5], 0.99, "b")],
          [mend7.V0, mend7.a, mend7.b, mend7.mend_CI([0.01, 1, 2], 0.95, "b"), mend7.mend_CI([0.01, 1, 2], 0.99, "b")],
@@ -1289,6 +1294,8 @@ mend9 = Mendelsohn(0.5, 0.01, 1, 0.1, 1)
 mend10 = Mendelsohn(0.5, 0.01, 1, 0.5, 1)
 mend11 = Mendelsohn(0.5, 0.01, 1, 0.95, 1)
 mend12 = Mendelsohn(0.5, 0.01, 1, 2, 1)
+
+# Confidence Intervals
 
 data1 = [[mend9.V0, mend9.a, mend9.b, np.around(mend9.mend_CI([0.01, 1, 0.1], 0.95, "b"), 6), np.around(mend9.mend_CI([0.01, 1, 0.1], 0.99, "b"), 6)],
          [mend10.V0, mend10.a, mend10.b, np.around(mend10.mend_CI([0.01, 1, 0.5], 0.95, "b"), 6), np.around(mend10.mend_CI([0.01, 1, 0.5], 0.99, "b"), 6)],
@@ -1318,16 +1325,20 @@ col_names1 = ["V0", "a", "b", "\u03C3", "MLE for V0", "MLE for a", "MLE for b"]
 # print(tabulate(data1, headers=col_names1, tablefmt="latex"))
 
 # Optimal Control Plot
-mend1 = Mendelsohn(0.05, 1, 1, 0.5, 1)
+# mend1 = Mendelsohn(0.05, 1, 1, 0.5, 1)
 # mend1.plot_v_D(10, mend1.V0)
 
+# Noisy solutions plot
 # mend1.mend_sol_noise_plot([mend1.V0, mend1.a, mend1.b], [0.05, 0.2, 0.5])
 
+# Mendelsohn Solution Plot
 # mend1.plot([mend1.V0, mend1.a, mend1.b])
 
 mend1 = Mendelsohn(0.05, 1, 1, 0.5, 1)
 mend2 = Mendelsohn(0.05, 1, 5, 0.5, 1)
 mend3 = Mendelsohn(0.05, 1, 1, 0.95, 1)
+
+# Constant Dosages
 
 data = [[mend1.V0, mend1.a, mend1.b, 0.1, mend1.get_D(np.linspace(0,10,101), [mend1.V0, mend1.a, mend1.b], 0.1)],
          [mend1.V0, mend1.a, mend1.b, 1, mend1.get_D(np.linspace(0,10,101), [mend1.V0, mend1.a, mend1.b], 1)],
@@ -1353,6 +1364,8 @@ log4 = Logistic(0.05, 0.01, 5, 10, 1)
 log5 = Logistic(0.05, 0.01, 25, 10, 1)
 log6 = Logistic(0.05, 0.01, 100, 10, 1)
 
+# Confidence Intervals
+
 data1 = [[log1.V0, log1.r, log1.k, np.around(log1.log_CI([0.01, 0.1, 10], 0.95, "r"), 6), np.around(log1.log_CI([0.01, 0.1, 10], 0.99, "r"), 6)],
          [log2.V0, log2.r, log2.k, np.around(log2.log_CI([0.01, 0.5, 10], 0.95, "r"), 6), np.around(log2.log_CI([0.01, 0.5, 10], 0.99, "r"), 6)],
          [log3.V0, log3.r, log3.k, np.around(log3.log_CI([0.01, 1, 10], 0.95, "r"), 6), np.around(log3.log_CI([0.01, 1, 10], 0.99, "r"), 6)],
@@ -1374,9 +1387,6 @@ col_names2 = ["V0", "r", "k", "95% Confidence Interval for k", "99% Confidence I
 # print(tabulate(data1, headers=col_names1, tablefmt="latex"))
 # print(tabulate(data2, headers=col_names2, tablefmt="latex"))
 
-# print(log1.log_CI([0.01, 0.1, 10], 0.95, "K"))
-
-
 # Logistic models with noise = 0.05 and varying k (Low Initial Volume)
 log1 = Logistic(0.05, 0.01, 1, 1, 1)
 log2 = Logistic(0.05, 0.01, 1, 5, 1)
@@ -1384,6 +1394,8 @@ log3 = Logistic(0.05, 0.01, 1, 10, 1)
 log4 = Logistic(0.05, 0.01, 1, 25, 1)
 log5 = Logistic(0.05, 0.01, 1, 100, 1)
 log6 = Logistic(0.05, 0.01, 1, 1000, 1)
+
+# Confidence Intervals
 
 data1 = [[log1.V0, log1.r, log1.k, np.around(log1.log_CI([0.01, 1, 1], 0.95, "r"), 6), np.around(log1.log_CI([0.01, 1, 1], 0.99, "r"), 6)],
          [log2.V0, log2.r, log2.k, np.around(log2.log_CI([0.01, 1, 5], 0.95, "r"), 6), np.around(log2.log_CI([0.01, 1, 5], 0.99, "r"), 6)],
@@ -1411,6 +1423,8 @@ log3 = Logistic(0.05, 10, 1, 10, 1)
 log4 = Logistic(0.05, 10, 1, 25, 1)
 log5 = Logistic(0.05, 10, 1, 100, 1)
 log6 = Logistic(0.05, 10, 1, 1000, 1)
+
+# Confidence Intervals
 
 data1 = [[log1.V0, log1.r, log1.k, np.around(log1.log_CI([10, 1, 1], 0.95, "r"), 6), np.around(log1.log_CI([10, 1, 1], 0.99, "r"), 6)],
          [log2.V0, log2.r, log2.k, np.around(log2.log_CI([10, 1, 5], 0.95, "r"), 6), np.around(log2.log_CI([10, 1, 5], 0.99, "r"), 6)],
@@ -1450,20 +1464,22 @@ log1 = Logistic(0.05, 1, 1, 10, 0.1)
 log2 = Logistic(0.05, 1, 7, 10, 1)
 log3 = Logistic(0.05, 1, 1, 10, 10)
 
+# Optimal Control Plots
 # log1.plot_v_D(log1.V0, 10, log1.c)
-# print(log2.get_p0(10, log2.V0))
-# log2.plot_res(10, log2.V0)
 # log2.plot_v_D(log2.V0, 10, log2.c)
 # log3.plot_v_D(log3.V0, 10, log3.c)
 
-
+# Noisy solution plot
 # log1.log_sol_noise_plot([log1.V0, log1.r, log1.k], [0.05, 0.2, 0.5])
 
+# Logistic solution plot
 # log1.plot([log1.V0, log1.r, log1.k])
 
 log1 = Logistic(0.05, 1, 1, 10, 1)
 log2 = Logistic(0.05, 1, 5, 10, 1)
 log3 = Logistic(0.05, 1, 1, 25, 1)
+
+# Constant Dosages
 
 data = [[log1.V0, log1.r, log1.k, 0.1, log1.get_D(np.linspace(0,10,101), [log1.V0, log1.r, log1.k], 0.1)],
          [log1.V0, log1.r, log1.k, 1, log1.get_D(np.linspace(0,10,101), [log1.V0, log1.r, log1.k], 1)],
@@ -1489,6 +1505,8 @@ gomp3 = Gompertz(0.05, 0.01, 1, 10)
 gomp4 = Gompertz(0.05, 0.01, 5, 10)
 gomp5 = Gompertz(0.05, 0.01, 25, 10)
 gomp6 = Gompertz(0.05, 0.01, 100, 10)
+
+# Confidence Intervals
 
 data1 = [[gomp1.V0, gomp1.r, gomp1.k, np.around(gomp1.gomp_CI([0.01, 0.1, 10], 0.95, "r"), 6), np.around(gomp1.gomp_CI([0.01, 0.1, 10], 0.99, "r"), 6)],
          [gomp2.V0, gomp2.r, gomp2.k, np.around(gomp2.gomp_CI([0.01, 0.5, 10], 0.95, "r"), 6), np.around(gomp2.gomp_CI([0.01, 0.5, 10], 0.99, "r"), 6)],
@@ -1518,6 +1536,8 @@ gomp4 = Gompertz(0.05, 0.01, 1, 25)
 gomp5 = Gompertz(0.05, 0.01, 1, 100)
 gomp6 = Gompertz(0.05, 0.01, 1, 1000)
 
+# Confidence Intervals
+
 data1 = [[gomp1.V0, gomp1.r, gomp1.k, np.around(gomp1.gomp_CI([0.01, 1, 1], 0.95, "r"), 6), np.around(gomp1.gomp_CI([0.01, 1, 1], 0.99, "r"), 6)],
          [gomp2.V0, gomp2.r, gomp2.k, np.around(gomp2.gomp_CI([0.01, 1, 5], 0.95, "r"), 6), np.around(gomp2.gomp_CI([0.01, 1, 5], 0.99, "r"), 6)],
          [gomp3.V0, gomp3.r, gomp3.k, np.around(gomp3.gomp_CI([0.01, 1, 10], 0.95, "r"), 6), np.around(gomp3.gomp_CI([0.01, 1, 10], 0.99, "r"), 6)],
@@ -1544,6 +1564,8 @@ gomp3 = Gompertz(0.05, 10, 1, 10)
 gomp4 = Gompertz(0.05, 10, 1, 25)
 gomp5 = Gompertz(0.05, 10, 1, 100)
 gomp6 = Gompertz(0.05, 10, 1, 1000)
+
+# Confidence Intervals
 
 data1 = [[gomp1.V0, gomp1.r, gomp1.k, np.around(gomp1.gomp_CI([10, 1, 1], 0.95, "r"), 6), np.around(gomp1.gomp_CI([10, 1, 1], 0.99, "r"), 6)],
          [gomp2.V0, gomp2.r, gomp2.k, np.around(gomp2.gomp_CI([10, 1, 5], 0.95, "r"), 6), np.around(gomp2.gomp_CI([10, 1, 5], 0.99, "r"), 6)],
@@ -1580,19 +1602,25 @@ col_names1 = ["V0", "r", "k", "\u03C3", "MLE for V0", "MLE for r", "MLE for k"]
 # print(tabulate(data1, headers=col_names1, tablefmt="latex"))
 
 # Gompertz model with varying c
-gomp1 = Gompertz(0.05, 1, 1, 10)
+# gomp1 = Gompertz(0.05, 1, 1, 10)
+
+# Optimal Control Plots
 
 # gomp1.plot_v_D(gomp1.V0, gomp1.r, gomp1.k, 10, 0.1)
 # gomp1.plot_v_D(gomp1.V0, gomp1.r, gomp1.k, 10, 1)
 # gomp3.plot_v_D(gomp3.V0, gomp3.r, gomp3.k, 10, 10)
 
+# Noisy solution plot
 # gomp1.gomp_sol_noise_plot([gomp1.V0, gomp1.r, gomp1.k], [0.05, 0.2, 0.5])
 
+# Gompertz solution
 # gomp1.plot([gomp1.V0, gomp1.r, gomp1.k])
 
 gomp1 = Gompertz(0.05, 1, 1, 10)
 gomp2 = Gompertz(0.05, 1, 5, 10)
 gomp3 = Gompertz(0.05, 1, 1, 25)
+
+# Constant Dosages
 
 data = [[gomp1.V0, gomp1.r, gomp1.k, 0.1, gomp1.get_D(np.linspace(0,10,101), [gomp1.V0, gomp1.r, gomp1.k], 0.1)],
          [gomp1.V0, gomp1.r, gomp1.k, 1, gomp1.get_D(np.linspace(0,10,101), [gomp1.V0, gomp1.r, gomp1.k], 1)],
@@ -1617,6 +1645,8 @@ bert1 = Bertalanffy(0.05, 0.01, 1, 1, 1)
 bert2 = Bertalanffy(0.05, 0.01, 2, 1, 1)
 bert3 = Bertalanffy(0.05, 0.01, 1, 2, 1)
 
+# Confidence Intervals
+
 data1 = [[bert1.V0, bert1.b, bert1.d, np.around(bert1.bert_CI([0.01, 1, 1], 0.95, "b"), 6), np.around(bert1.bert_CI([0.01, 1, 1], 0.99, "b"), 6)],
          [bert2.V0, bert2.b, bert2.d, np.around(bert2.bert_CI([0.01, 2, 1], 0.95, "b"), 6), np.around(bert2.bert_CI([0.01, 2, 1], 0.99, "b"), 6)],
          [bert3.V0, bert3.b, bert3.d, np.around(bert3.bert_CI([0.01, 1, 2], 0.95, "b"), 6), np.around(bert3.bert_CI([0.01, 1, 2], 0.99, "b"), 6)]
@@ -1636,6 +1666,8 @@ col_names2 = ["V0", "b", "d", "95% Confidence Interval for d", "99% Confidence I
 bert1 = Bertalanffy(0.5, 0.01, 1, 1, 1)
 bert2 = Bertalanffy(0.5, 0.01, 2, 1, 1)
 bert3 = Bertalanffy(0.5, 0.01, 1, 2, 1)
+
+# Confidence Intervals
 
 data1 = [[bert1.V0, bert1.b, bert1.d, np.around(bert1.bert_CI([0.01, 1, 1], 0.95, "b"), 6), np.around(bert1.bert_CI([0.01, 1, 1], 0.99, "b"), 6)],
          [bert2.V0, bert2.b, bert2.d, np.around(bert2.bert_CI([0.01, 2, 1], 0.95, "b"), 6), np.around(bert2.bert_CI([0.01, 2, 1], 0.99, "b"), 6)],
@@ -1674,20 +1706,24 @@ bert1 = Bertalanffy(0.05, 1, 2, 1, 0.1)
 bert2 = Bertalanffy(0.05, 1, 10, 1, 1)
 bert3 = Bertalanffy(0.05, 1, 2, 1, 10)
 
-# print(bert1.get_v(10, bert1.V0))
+# Optimal Control Plots
 
 # bert1.plot_v_D(bert1.V0, 10, bert1.c)
-# bert2.plot_res(10, bert2.V0)
 # bert2.plot_v_D(bert2.V0, 10, bert2.c)
 # bert3.plot_v_D(bert3.V0, 10, bert3.c)
 
+# Noisy solution plot
+
 # bert1.bert_sol_noise_plot([bert1.V0, bert1.b, bert1.d], [0.05, 0.2, 0.5])
 
+#Bertalanffy plot
 # bert1.plot([bert1.V0, bert1.b, bert1.d])
 
 bert1 = Bertalanffy(0.05, 1, 2, 1, 1)
 bert2 = Bertalanffy(0.05, 1, 5, 1, 1)
 bert3 = Bertalanffy(0.05, 0.01, 5, 1, 1)
+
+# Constant Dosages
 
 data = [[bert1.V0, bert1.b, bert1.d, 0.1, bert1.get_D(np.linspace(0,10,101), [bert1.V0, bert1.b, bert1.d], 0.1)],
          [bert1.V0, bert1.b, bert1.d, 1, bert1.get_D(np.linspace(0,10,101), [bert1.V0, bert1.b, bert1.d], 1)],
